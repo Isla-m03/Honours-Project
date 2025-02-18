@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -18,9 +18,9 @@ db = SQLAlchemy(app)
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
-    role = db.Column(db.String(80), nullable=False)
-    availability = db.Column(db.Text, nullable=False)
-    preferred_hours = db.Column(db.Integer, nullable=False)
+    role = db.Column(db.String(80), nullable=False)  # e.g., Server, Chef, Bartender
+    availability = db.Column(db.Text, nullable=False)  # e.g., "Mon-Fri 10:00-23:00"
+    preferred_hours = db.Column(db.Integer, nullable=False)  # Weekly target hours
 
 # Holiday Request model
 class HolidayRequest(db.Model):
@@ -30,100 +30,147 @@ class HolidayRequest(db.Model):
     status = db.Column(db.String(20), default="Pending")
     employee = db.relationship('Employee', backref=db.backref('holiday_requests', lazy=True))
 
+# Shift model
+class Shift(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    shift_type = db.Column(db.String(50), nullable=False)  # AM or PM
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=True)  # Assigned employee
+    role = db.Column(db.String(50), nullable=False)  # Role required (Server, Chef, etc.)
+
+    employee = db.relationship('Employee', backref=db.backref('shifts', lazy=True))
+
+# Forecast model
+class Forecast(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    revenue = db.Column(db.Integer, nullable=False)  # Predicted revenue for the day
+
 # Create tables if they don't exist
 with app.app_context():
     db.create_all()
 
-# Routes
+# Define required staff per revenue forecast
+def get_required_staff(revenue):
+    """Determines required staff based on forecasted revenue."""
+    if revenue < 2000:
+        return {"Server": 1, "Chef": 2}
+    elif revenue < 5000:
+        return {"Server": 3, "Chef": 3, "Bartender": 1}
+    elif revenue < 8000:
+        return {"Server": 7, "Chef": 5, "Bartender": 1, "Server Assistant": 1, "Door Host": 1}
+    else:
+        return {"Server": 10, "Chef": 7, "Bartender": 2, "Server Assistant": 2, "Door Host": 2}
 
-# 1. Add an employee
+# Generate schedule
+def generate_schedule(start_date, end_date):
+    """Automatically creates a rota based on forecasted demand."""
+    try:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+        employees = Employee.query.all()
+
+        current_date = start_date
+        while current_date <= end_date:
+            forecast = Forecast.query.filter_by(date=current_date).first()
+            if not forecast:
+                current_date += timedelta(days=1)
+                continue  # Skip days without a forecast
+
+            required_staff = get_required_staff(forecast.revenue)
+
+            for role, count_needed in required_staff.items():
+                available_employees = [
+                    emp for emp in employees if emp.role == role and str(current_date.weekday()) in emp.availability
+                ]
+
+                # Exclude employees on approved holiday
+                available_employees = [
+                    emp for emp in available_employees if not HolidayRequest.query.filter_by(
+                        employee_id=emp.id, date=current_date, status="Approved"
+                    ).first()
+                ]
+
+                # Sort employees by those with fewer weekly hours worked
+                available_employees.sort(key=lambda emp: sum(
+                    (s.end_time.hour - s.start_time.hour) for s in emp.shifts if s.date >= current_date - timedelta(days=current_date.weekday())
+                ))
+
+                assigned_employees = []
+                for _ in range(count_needed):
+                    if available_employees:
+                        employee = available_employees.pop(0)
+                        assigned_employees.append(employee.id)
+                        available_employees.append(employee)  # Rotate for fairness
+
+                # Save shifts
+                for employee_id in assigned_employees:
+                    new_shift = Shift(
+                        date=current_date,
+                        shift_type="AM" if _ < count_needed // 2 else "PM",
+                        start_time=datetime.strptime("10:00", "%H:%M").time(),
+                        end_time=datetime.strptime("23:00", "%H:%M").time(),
+                        employee_id=employee_id,
+                        role=role
+                    )
+                    db.session.add(new_shift)
+
+            current_date += timedelta(days=1)  # Move to next day
+
+        db.session.commit()
+        return {"message": "Schedule generated successfully"}, 201
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+# API Endpoints
+
 @app.route('/employees', methods=['POST'])
 def add_employee():
     data = request.json
-    try:
-        if not data or 'name' not in data or 'role' not in data:
-            return jsonify({'error': 'Missing required fields'}), 400
+    if not data or 'name' not in data or 'role' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
 
-        new_employee = Employee(
-            name=data['name'],
-            role=data['role'],
-            availability=data.get('availability', ''),
-            preferred_hours=data.get('preferred_hours', 0)
-        )
-        db.session.add(new_employee)
-        db.session.commit()
-        return jsonify({'message': 'Employee added successfully', 'id': new_employee.id}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# 2. Get all employees
-@app.route('/employees', methods=['GET'])
-def get_employees():
-    employees = Employee.query.all()
-    employee_list = [{'id': e.id, 'name': e.name, 'role': e.role, 'availability': e.availability, 'preferred_hours': e.preferred_hours} for e in employees]
-    return jsonify(employee_list), 200
-
-# 3. Submit a holiday request
-@app.route('/holiday_requests', methods=['POST'])
-def request_holiday():
-    data = request.json
-    try:
-        if not data or 'employee_id' not in data or 'date' not in data:
-            return jsonify({'error': 'Missing required fields: employee_id, date'}), 400
-
-        employee_id = data['employee_id']
-        date_str = data['date']
-
-        # Convert date
-        try:
-            date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        except ValueError:
-            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
-
-        # Check if employee exists
-        employee = Employee.query.get(employee_id)
-        if not employee:
-            return jsonify({'error': 'Employee not found'}), 404
-
-        # Check for duplicate request on the same date
-        existing_request = HolidayRequest.query.filter_by(employee_id=employee_id, date=date).first()
-        if existing_request:
-            return jsonify({'error': 'Holiday request already exists for this date'}), 400
-
-        new_request = HolidayRequest(employee_id=employee_id, date=date)
-        db.session.add(new_request)
-        db.session.commit()
-        return jsonify({'message': 'Holiday request submitted successfully', 'id': new_request.id}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# 4. Get all holiday requests
-@app.route('/holiday_requests', methods=['GET'])
-def get_holiday_requests():
-    requests = HolidayRequest.query.all()
-    request_list = [{'id': r.id, 'employee_id': r.employee_id, 'date': r.date.strftime("%Y-%m-%d"), 'status': r.status} for r in requests]
-    return jsonify(request_list), 200
-
-# 5. Approve or reject a holiday request
-@app.route('/holiday_requests/<int:id>', methods=['PUT'])
-def update_holiday_request(id):
-    data = request.json
-    holiday_request = HolidayRequest.query.get_or_404(id)
-
-    if 'status' not in data or data['status'] not in ['Approved', 'Rejected']:
-        return jsonify({'error': 'Invalid status. Use "Approved" or "Rejected"'}), 400
-
-    holiday_request.status = data['status']
+    new_employee = Employee(
+        name=data['name'],
+        role=data['role'],
+        availability=data.get('availability', ''),
+        preferred_hours=data.get('preferred_hours', 0)
+    )
+    db.session.add(new_employee)
     db.session.commit()
-    return jsonify({'message': f'Holiday request {id} {data["status"]}'}), 200
+    return jsonify({'message': 'Employee added successfully', 'id': new_employee.id}), 201
 
-# 6. Get holiday requests for a specific employee
-@app.route('/employees/<int:employee_id>/holiday_requests', methods=['GET'])
-def get_employee_holiday_requests(employee_id):
-    employee = Employee.query.get_or_404(employee_id)
-    requests = HolidayRequest.query.filter_by(employee_id=employee_id).all()
-    request_list = [{'id': r.id, 'date': r.date.strftime("%Y-%m-%d"), 'status': r.status} for r in requests]
-    return jsonify(request_list), 200
+@app.route('/forecast', methods=['POST'])
+def submit_forecast():
+    data = request.json
+    if not data or 'date' not in data or 'revenue' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    new_forecast = Forecast(date=datetime.strptime(data['date'], "%Y-%m-%d").date(), revenue=data['revenue'])
+    db.session.add(new_forecast)
+    db.session.commit()
+    return jsonify({'message': 'Forecast added successfully'}), 201
+
+@app.route('/generate_schedule', methods=['POST'])
+def generate_schedule_route():
+    data = request.json
+    if not data or 'start_date' not in data or 'end_date' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    return generate_schedule(data['start_date'], data['end_date'])
+
+@app.route('/schedule', methods=['GET'])
+def get_schedule():
+    shifts = Shift.query.all()
+    return jsonify([
+        {"id": s.id, "date": s.date.strftime("%Y-%m-%d"), "shift_type": s.shift_type, 
+         "start_time": s.start_time.strftime("%H:%M"), "end_time": s.end_time.strftime("%H:%M"),
+         "employee_id": s.employee_id, "role": s.role}
+        for s in shifts
+    ]), 200
 
 # Run the app
 if __name__ == '__main__':
