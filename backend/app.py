@@ -1,10 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
+import traceback
 from datetime import datetime, timedelta
 
 # Initialize Flask app
 app = Flask(__name__)
+
+print("🚀 Flask app is starting...")
+print("📌 Ensure Flask routes are registered correctly.")
 
 # Database configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -14,7 +18,6 @@ db = SQLAlchemy(app)
 
 # Models
 
-# Employee model
 class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
@@ -22,7 +25,6 @@ class Employee(db.Model):
     availability = db.Column(db.Text, nullable=False)  # e.g., "Mon-Fri 10:00-23:00"
     preferred_hours = db.Column(db.Integer, nullable=False)  # Weekly target hours
 
-# Holiday Request model
 class HolidayRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
@@ -30,7 +32,6 @@ class HolidayRequest(db.Model):
     status = db.Column(db.String(20), default="Pending")
     employee = db.relationship('Employee', backref=db.backref('holiday_requests', lazy=True))
 
-# Shift model
 class Shift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
@@ -42,7 +43,6 @@ class Shift(db.Model):
 
     employee = db.relationship('Employee', backref=db.backref('shifts', lazy=True))
 
-# Forecast model
 class Forecast(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
@@ -54,7 +54,6 @@ with app.app_context():
 
 # Define required staff per revenue forecast
 def get_required_staff(revenue):
-    """Determines required staff based on forecasted revenue."""
     if revenue < 2000:
         return {"Server": 1, "Chef": 2}
     elif revenue < 5000:
@@ -64,66 +63,98 @@ def get_required_staff(revenue):
     else:
         return {"Server": 10, "Chef": 7, "Bartender": 2, "Server Assistant": 2, "Door Host": 2}
 
-# Generate schedule
 def generate_schedule(start_date, end_date):
-    """Automatically creates a rota based on forecasted demand."""
     try:
         start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
         employees = Employee.query.all()
+        print(f"✅ Employees Found: {len(employees)}")
+
+        weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
         current_date = start_date
         while current_date <= end_date:
             forecast = Forecast.query.filter_by(date=current_date).first()
             if not forecast:
+                print(f"⚠️ No forecast found for {current_date}, skipping...")
                 current_date += timedelta(days=1)
                 continue  # Skip days without a forecast
 
             required_staff = get_required_staff(forecast.revenue)
+            print(f"📅 {current_date}: Need {required_staff}")
+
+            current_day = weekdays[current_date.weekday()]  # Convert date to weekday name (Mon, Tue, etc.)
 
             for role, count_needed in required_staff.items():
+                # Select employees available on this day
                 available_employees = [
-                    emp for emp in employees if emp.role == role and str(current_date.weekday()) in emp.availability
+                    emp for emp in employees if emp.role == role and current_day in emp.availability
                 ]
 
-                # Exclude employees on approved holiday
+                # Exclude employees with approved holidays
                 available_employees = [
                     emp for emp in available_employees if not HolidayRequest.query.filter_by(
                         employee_id=emp.id, date=current_date, status="Approved"
                     ).first()
                 ]
 
-                # Sort employees by those with fewer weekly hours worked
+                # Sort employees by those who have worked the least hours this week
                 available_employees.sort(key=lambda emp: sum(
                     (s.end_time.hour - s.start_time.hour) for s in emp.shifts if s.date >= current_date - timedelta(days=current_date.weekday())
                 ))
+
+                print(f"👥 Available {role}s for {current_date.strftime('%A')}: {[emp.name for emp in available_employees]}")
+
+                if not available_employees:
+                    print(f"⚠️ No {role} available for {current_date}")
+                    continue  # Skip if no available employees
 
                 assigned_employees = []
                 for _ in range(count_needed):
                     if available_employees:
                         employee = available_employees.pop(0)
-                        assigned_employees.append(employee.id)
-                        available_employees.append(employee)  # Rotate for fairness
+                        assigned_employees.append(employee)
 
-                # Save shifts
-                for employee_id in assigned_employees:
+                print(f"✅ Assigned {role}s: {[emp.name for emp in assigned_employees]}")
+
+                # Split shifts between AM and PM
+                half_count = max(1, count_needed // 2)  # At least 1 person per shift
+
+                for i, employee in enumerate(assigned_employees):
+                    shift_type = "AM" if i < half_count else "PM"
+                    start_time = datetime.strptime("10:00", "%H:%M").time() if shift_type == "AM" else datetime.strptime("17:00", "%H:%M").time()
+                    end_time = datetime.strptime("17:00", "%H:%M").time() if shift_type == "AM" else datetime.strptime("23:00", "%H:%M").time()
+
                     new_shift = Shift(
                         date=current_date,
-                        shift_type="AM" if _ < count_needed // 2 else "PM",
-                        start_time=datetime.strptime("10:00", "%H:%M").time(),
-                        end_time=datetime.strptime("23:00", "%H:%M").time(),
-                        employee_id=employee_id,
+                        shift_type=shift_type,
+                        start_time=start_time,
+                        end_time=end_time,
+                        employee_id=employee.id,
                         role=role
                     )
                     db.session.add(new_shift)
+                    print(f"✅ Shift Created: {shift_type} shift for {employee.name} ({role}) on {current_date}")
 
-            current_date += timedelta(days=1)  # Move to next day
+            current_date += timedelta(days=1)
 
+        print("🔄 Committing shifts to database...")
         db.session.commit()
+        print("🎉 All shifts saved successfully!")
+
+        # Check if shifts were actually saved
+        saved_shifts = Shift.query.all()
+        print(f"🛠 DEBUG: Shifts in DB after commit: {len(saved_shifts)}")
+
         return {"message": "Schedule generated successfully"}, 201
     except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        db.session.rollback()
         return {"error": str(e)}, 500
+
+
+
 
 # API Endpoints
 
@@ -154,6 +185,22 @@ def submit_forecast():
     db.session.commit()
     return jsonify({'message': 'Forecast added successfully'}), 201
 
+# GET method for fetching forecasts
+@app.route('/forecast', methods=['GET'])
+def get_forecast():
+    forecasts = Forecast.query.all()
+    forecast_list = [{"date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]
+    return jsonify(forecast_list), 200
+
+@app.route('/employees', methods=['GET'])
+def get_employees():
+    employees = Employee.query.all()
+    employee_list = [
+        {"id": emp.id, "name": emp.name, "role": emp.role, "availability": emp.availability, "preferred_hours": emp.preferred_hours}
+        for emp in employees
+    ]
+    return jsonify(employee_list), 200
+
 @app.route('/generate_schedule', methods=['POST'])
 def generate_schedule_route():
     data = request.json
@@ -175,3 +222,4 @@ def get_schedule():
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
+
