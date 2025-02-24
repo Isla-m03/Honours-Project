@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const AddEmployee = () => {
@@ -6,19 +6,34 @@ const AddEmployee = () => {
     const [role, setRole] = useState("");
     const [availability, setAvailability] = useState("");
     const [preferredHours, setPreferredHours] = useState(40);
-    const [response, setResponse] = useState("");
+    const [employees, setEmployees] = useState([]);
+
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    const fetchEmployees = async () => {
+        try {
+            const res = await axios.get("http://127.0.0.1:5000/employees");
+            console.log("Fetched Employees:", res.data);  // Debugging
+            setEmployees(res.data);
+        } catch (error) {
+            console.error("Error fetching employees:", error);
+        }
+    };
+    
 
     const addEmployee = async () => {
         try {
-            const res = await axios.post("http://127.0.0.1:5000/employees", {
+            await axios.post("http://127.0.0.1:5000/employees", {
                 name,
                 role,
                 availability,
                 preferred_hours: preferredHours,
             });
-            setResponse(res.data.message);
+            fetchEmployees(); // Refresh list
         } catch (error) {
-            setResponse("Error adding employee");
+            console.error("Error adding employee:", error);
         }
     };
 
@@ -30,9 +45,16 @@ const AddEmployee = () => {
             <input type="text" placeholder="Availability (Mon-Fri 10:00-23:00)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
             <input type="number" placeholder="Preferred Hours" value={preferredHours} onChange={(e) => setPreferredHours(e.target.value)} />
             <button onClick={addEmployee}>Add Employee</button>
-            <p>{response}</p>
+
+            <h3>Current Employees</h3>
+            <ul>
+                {employees.map((emp) => (
+                    <li key={emp.id}>{emp.name} - {emp.role} ({emp.availability})</li>
+                ))}
+            </ul>
         </div>
     );
 };
 
 export default AddEmployee;
+

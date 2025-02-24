@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import os
 import traceback
 from datetime import datetime, timedelta
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 print("🚀 Flask app is starting...")
 print("📌 Ensure Flask routes are registered correctly.")
@@ -158,22 +160,34 @@ def generate_schedule(start_date, end_date):
 
 # API Endpoints
 
-@app.route('/employees', methods=['POST'])
-def add_employee():
-    data = request.json
-    if not data or 'name' not in data or 'role' not in data:
-        return jsonify({'error': 'Missing required fields'}), 400
+from flask_cors import cross_origin
 
-    new_employee = Employee(
-        name=data['name'],
-        role=data['role'],
-        availability=data.get('availability', ''),
-        preferred_hours=data.get('preferred_hours', 0)
-    )
-    db.session.add(new_employee)
-    db.session.commit()
-    return jsonify({'message': 'Employee added successfully', 'id': new_employee.id}), 201
+@app.route('/')
+def home():
+    return "Welcome to the Employee Scheduling API! Visit /employees or /schedule"
 
+@app.route('/employees', methods=['POST', 'GET'])
+@cross_origin()  # Allow CORS for this route
+def employees():
+    if request.method == 'POST':
+        data = request.json
+        new_employee = Employee(
+            name=data['name'],
+            role=data['role'],
+            availability=data.get('availability', ''),
+            preferred_hours=data.get('preferred_hours', 40)
+        )
+        db.session.add(new_employee)
+        db.session.commit()
+        return jsonify({'message': 'Employee added successfully', 'id': new_employee.id}), 201
+
+    elif request.method == 'GET':
+        employees = Employee.query.all()
+        return jsonify([
+            {"id": emp.id, "name": emp.name, "role": emp.role, "availability": emp.availability}
+            for emp in employees
+        ]), 200
+    
 @app.route('/forecast', methods=['POST'])
 def submit_forecast():
     data = request.json
@@ -191,15 +205,6 @@ def get_forecast():
     forecasts = Forecast.query.all()
     forecast_list = [{"date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]
     return jsonify(forecast_list), 200
-
-@app.route('/employees', methods=['GET'])
-def get_employees():
-    employees = Employee.query.all()
-    employee_list = [
-        {"id": emp.id, "name": emp.name, "role": emp.role, "availability": emp.availability, "preferred_hours": emp.preferred_hours}
-        for emp in employees
-    ]
-    return jsonify(employee_list), 200
 
 @app.route('/generate_schedule', methods=['POST'])
 def generate_schedule_route():
