@@ -56,14 +56,16 @@ with app.app_context():
 
 # Define required staff per revenue forecast
 def get_required_staff(revenue):
-    if revenue < 2000:
-        return {"Server": 1, "Chef": 2}
+    if revenue < 1000:
+        return {"Server": 1, "Chef": 2, "Manager": 1}
+    elif revenue < 3000:
+        return {"Server": 3, "Chef": 3, "Bartender": 1, "Manager": 1}
     elif revenue < 5000:
-        return {"Server": 3, "Chef": 3, "Bartender": 1}
+        return {"Server": 5, "Chef": 5, "Bartender": 1, "Server Assistant": 1, "Door Host": 1, "Manager": 2}
     elif revenue < 8000:
-        return {"Server": 7, "Chef": 5, "Bartender": 1, "Server Assistant": 1, "Door Host": 1}
+        return {"Server": 7, "Chef": 5, "Bartender": 2, "Server Assistant": 2, "Door Host": 1, "Manager": 3}
     else:
-        return {"Server": 10, "Chef": 7, "Bartender": 2, "Server Assistant": 2, "Door Host": 2}
+        return {"Server": 10, "Chef": 7, "Bartender": 2, "Server Assistant": 3, "Door Host": 2, "Manager": 3}
 
 def generate_schedule(start_date, end_date):
     try:
