@@ -68,7 +68,7 @@ const GenerateSchedule = () => {
 
     // Get employee name from ID
     const getEmployeeName = (id) => {
-        if (!id) return "Unassigned";  // ✅ Handle missing employee IDs
+        if (!id) return "Unassigned";  // Handle missing employee IDs
         const employee = employees.find(emp => emp.id === id);
         return employee ? employee.name : `Employee ID: ${id}`;
     };
@@ -83,7 +83,7 @@ const GenerateSchedule = () => {
 
     return (
         <div className="container">
-            <h2>📅 Generate & Manage Schedule</h2>
+            <h2>Generate & Manage Schedule</h2>
 
             {/* Generate Schedule Form */}
             <div className="form">
@@ -91,21 +91,21 @@ const GenerateSchedule = () => {
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
                 <label>End Date:</label>
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                <button onClick={generateSchedule} className="generate-btn">⚡ Generate Schedule</button>
+                <button onClick={generateSchedule} className="generate-btn">Generate Schedule</button>
             </div>
 
             {/* Select Date to View/Delete Schedule */}
             <div className="filter">
                 <label>View Schedule for Date:</label>
                 <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                <button onClick={deleteSchedule} className="delete-btn">❌ Delete Schedule</button>
+                <button onClick={deleteSchedule} className="delete-btn">Delete Schedule</button>
             </div>
 
             {/* Display Schedule by Role */}
             {selectedDate && schedule.length > 0 ? (
                 Object.keys(groupedShifts).map((role) => (
                     <div key={role} className="schedule-section">
-                        <h3>🔹 {role}</h3>
+                        <h3>{role}</h3>
                         <table className="schedule-table">
                             <thead>
                                 <tr>

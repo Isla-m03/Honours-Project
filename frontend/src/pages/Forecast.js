@@ -37,19 +37,19 @@ const Forecast = () => {
     };
 
     const deleteForecast = async (id) => {
-        console.log("🛑 Attempting to delete forecast with ID:", id); // Debugging
+        console.log("Attempting to delete forecast with ID:", id); // Debugging
     
         if (!id) {
-            console.error("❌ Error: Forecast ID is undefined!");
+            console.error("Error: Forecast ID is undefined!");
             return;
         }
     
         try {
             const res = await axios.delete(`http://127.0.0.1:5000/forecast/${id}`);
-            console.log("✅ Delete Forecast Response:", res.data);
+            console.log("Delete Forecast Response:", res.data);
             fetchForecasts(); // Refresh list after deleting
         } catch (error) {
-            console.error("❌ Error deleting forecast:", error.response ? error.response.data : error);
+            console.error("Error deleting forecast:", error.response ? error.response.data : error);
         }
     };
     ;
@@ -83,7 +83,7 @@ const Forecast = () => {
                                 <td>{f.date}</td>
                                 <td>${f.revenue}</td>
                                 <td>
-                                    <button onClick={() => deleteForecast(f.id)}>🗑 Delete</button>
+                                    <button onClick={() => deleteForecast(f.id)}>Delete</button>
                                 </td>
                             </tr>
                         ))

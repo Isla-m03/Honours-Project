@@ -9,8 +9,7 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-print("🚀 Flask app is starting...")
-print("📌 Ensure Flask routes are registered correctly.")
+print("Flask app is starting")
 
 # Database configuration
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -73,25 +72,25 @@ def generate_schedule(start_date, end_date):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
         employees = Employee.query.all()
-        print(f"✅ Employees Found: {len(employees)}")
+        print(f"Employees Found: {len(employees)}")
 
         current_date = start_date
         while current_date <= end_date:
             forecast = Forecast.query.filter_by(date=current_date).first()
             if not forecast:
-                print(f"⚠️ No forecast found for {current_date}, skipping...")
+                print(f"No forecast found for {current_date}, skipping...")
                 current_date += timedelta(days=1)
                 continue
 
-            # 🔥 Remove old shifts before generating new ones
+            # Remove old shifts before generating new ones
             Shift.query.filter_by(date=current_date).delete()
             db.session.commit()
-            print(f"🗑 Deleted old shifts for {current_date}")
+            print(f"Deleted old shifts for {current_date}")
 
             required_staff = get_required_staff(forecast.revenue)
-            print(f"📅 {current_date}: Initial Staffing Needs: {required_staff}")
+            print(f"{current_date}: Initial Staffing Needs: {required_staff}")
 
-            # ✅ Ensure Minimum Staffing Only for Essential Roles (Servers, Chefs, Managers)
+            # Ensure Minimum Staffing Only for Essential Roles (Servers, Chefs, Managers)
             essential_roles = {
                 "Server": 1,
                 "Chef": 2,
@@ -101,61 +100,61 @@ def generate_schedule(start_date, end_date):
             for role, min_required in essential_roles.items():
                 required_staff[role] = max(required_staff.get(role, 0), min_required * 2)  # Ensure AM & PM coverage
 
-            print(f"🛠 Adjusted Staffing Needs (Minimum Enforced for Essential Roles): {required_staff}")
+            print(f"Adjusted Staffing Needs (Minimum Enforced for Essential Roles): {required_staff}")
 
             for role, count_needed in required_staff.items():
-                # 📌 Debugging: Show All Employees for this Role
+                # Debugging: Show All Employees for this Role
                 all_role_employees = [emp.name for emp in employees if emp.role == role]
-                print(f"📋 All {role}s: {all_role_employees}")
+                print(f"All {role}s: {all_role_employees}")
 
-                # ✅ Check if Employee is Available on This Day
+                # Check if Employee is Available on This Day
                 available_employees = [
                     emp for emp in employees if emp.role == role and any(str(day) in emp.availability for day in range(7))
                 ]
 
-                print(f"🛠 DEBUG: {role} Before Holiday Filtering: {[emp.name for emp in available_employees]}")
+                print(f"DEBUG: {role} Before Holiday Filtering: {[emp.name for emp in available_employees]}")
 
-                # ✅ Exclude employees on approved holiday
+                # Exclude employees on approved holiday
                 available_employees = [
                     emp for emp in available_employees if not HolidayRequest.query.filter_by(
                         employee_id=emp.id, date=current_date, status="Approved"
                     ).first()
                 ]
 
-                print(f"👥 Available {role}s After Filtering: {[emp.name for emp in available_employees]}")
+                print(f"Available {role}s After Filtering: {[emp.name for emp in available_employees]}")
 
-                # ❌ If No Employees Available, Skip Role (If Not Essential)
+                # If No Employees Available, Skip Role (If Not Essential)
                 if not available_employees:
-                    print(f"⚠️ No {role} available for {current_date}. Skipping role if not essential...")
+                    print(f"No {role} available for {current_date}. Skipping role if not essential...")
                     if role in essential_roles:
-                        print(f"❌ ERROR: No essential role {role} available! Cannot generate schedule.")
+                        print(f"ERROR: No essential role {role} available! Cannot generate schedule.")
                         return {"error": f"Not enough {role}s available to cover required shifts."}, 500
                     continue  # Skip optional roles if no employees are available
 
                 assigned_employees = []
 
-                # ✅ Ensure AM and PM shifts have minimum staff for essential roles
+                # Ensure AM and PM shifts have minimum staff for essential roles
                 am_shifts = max(essential_roles.get(role, 0), count_needed // 2) if role in essential_roles else count_needed // 2
                 pm_shifts = count_needed - am_shifts
 
-                # 🔹 Adjust if not enough employees exist
+                # Adjust if not enough employees exist
                 if len(available_employees) < count_needed:
                     am_shifts = min(len(available_employees) // 2, essential_roles.get(role, 0))
                     pm_shifts = len(available_employees) - am_shifts
 
-                # 🔹 Assign AM shifts
+                # Assign AM shifts
                 for _ in range(am_shifts):
                     if available_employees:
                         employee = available_employees.pop(0)
                         assigned_employees.append((employee.id, "AM"))
 
-                # 🔹 Assign PM shifts
+                # Assign PM shifts
                 for _ in range(pm_shifts):
                     if available_employees:
                         employee = available_employees.pop(0)
                         assigned_employees.append((employee.id, "PM"))
 
-                print(f"✅ Assigned {role}s: {assigned_employees}")
+                print(f"Assigned {role}s: {assigned_employees}")
 
                 for employee_id, shift_type in assigned_employees:
                     start_time = "10:00" if shift_type == "AM" else "17:00"
@@ -170,17 +169,17 @@ def generate_schedule(start_date, end_date):
                         role=role
                     )
                     db.session.add(new_shift)
-                    print(f"✅ Shift Created: {new_shift}")
+                    print(f"Shift Created: {new_shift}")
 
             current_date += timedelta(days=1)
 
-        print("🔄 Committing shifts to database...")
+        print("Committing shifts to database...")
         db.session.commit()
-        print("🎉 All shifts saved successfully!")
+        print("All shifts saved successfully!")
 
         return {"message": "Schedule generated successfully"}, 201
     except Exception as e:
-        print(f"❌ ERROR: {str(e)}")
+        print(f"ERROR: {str(e)}")
         db.session.rollback()
         return {"error": str(e)}, 500
 
@@ -273,16 +272,16 @@ def update_employee(employee_id):
 
 @app.route('/forecast/<int:forecast_id>', methods=['DELETE'])
 def delete_forecast(forecast_id):
-    print(f"🛑 Delete request received for ID: {forecast_id}")  # Debugging
+    print(f"Delete request received for ID: {forecast_id}")  # Debugging
 
     forecast = Forecast.query.get(forecast_id)
     if not forecast:
-        print("❌ Forecast not found!")
+        print("Forecast not found!")
         return jsonify({'error': 'Forecast not found'}), 404
 
     db.session.delete(forecast)
     db.session.commit()
-    print(f"✅ Forecast {forecast_id} deleted successfully!")
+    print(f"Forecast {forecast_id} deleted successfully!")
     
     return jsonify({'message': 'Forecast deleted successfully'}), 200
 
@@ -348,7 +347,7 @@ def delete_schedule_by_date(date):
         db.session.commit()
 
         if deleted:
-            print(f"🗑 Deleted all shifts for {selected_date}")
+            print(f"Deleted all shifts for {selected_date}")
             return jsonify({"message": f"Deleted schedule for {selected_date}"}), 200
         else:
             return jsonify({"message": "No shifts found for this date"}), 404

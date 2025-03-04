@@ -120,7 +120,7 @@ const AddEmployee = () => {
                             )}</td>
                             <td>
                                 {editingId === emp.id ? (
-                                    <button onClick={() => updateEmployee(emp.id)}>✅ Save</button>
+                                    <button onClick={() => updateEmployee(emp.id)}>Save</button>
                                 ) : (
                                     <>
                                         <button onClick={() => {
@@ -128,8 +128,8 @@ const AddEmployee = () => {
                                             setName(emp.name);
                                             setRole(emp.role);
                                             setAvailability(emp.availability);
-                                        }}>✏️ Edit</button>
-                                        <button onClick={() => deleteEmployee(emp.id)}>🗑 Delete</button>
+                                        }}>Edit</button>
+                                        <button onClick={() => deleteEmployee(emp.id)}>Delete</button>
                                     </>
                                 )}
                             </td>
