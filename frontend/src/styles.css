@@ -114,6 +114,48 @@ th {
     color: #ffffff;
 }
 
+/* 📋 Employee Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #1e1e2f; /* Dark Purple */
+    color: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #6c5ce7; /* Purple Borders */
+}
+
+th {
+    background-color: #6c5ce7; /* Purple */
+    color: white;
+    font-weight: bold;
+}
+
+td {
+    background-color: #2b2b3b; /* Dark Grey */
+}
+
+/* 🔹 Add Space Between Rows */
+tr:hover {
+    background-color: #3a3a4e; /* Slight Highlight on Hover */
+}
+
+/* 📱 Responsive Table */
+@media (max-width: 600px) {
+    table {
+        font-size: 14px;
+    }
+    th, td {
+        padding: 8px;
+    }
+}
+
 /* 📱 Mobile Responsiveness */
 @media (max-width: 600px) {
     .container {
@@ -128,3 +170,5 @@ th {
         font-size: 14px;
     }
 }
+
+
