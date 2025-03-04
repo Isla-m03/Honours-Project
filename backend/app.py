@@ -75,81 +75,99 @@ def generate_schedule(start_date, end_date):
         employees = Employee.query.all()
         print(f"✅ Employees Found: {len(employees)}")
 
-        weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-
         current_date = start_date
         while current_date <= end_date:
             forecast = Forecast.query.filter_by(date=current_date).first()
             if not forecast:
                 print(f"⚠️ No forecast found for {current_date}, skipping...")
                 current_date += timedelta(days=1)
-                continue  # Skip days without a forecast
+                continue
+
+            # 🔥 Remove old shifts before generating new ones
+            Shift.query.filter_by(date=current_date).delete()
+            db.session.commit()
+            print(f"🗑 Deleted old shifts for {current_date}")
 
             required_staff = get_required_staff(forecast.revenue)
-            print(f"📅 {current_date}: Need {required_staff}")
+            print(f"📅 {current_date}: Initial Staffing Needs: {required_staff}")
 
-            current_day = weekdays[current_date.weekday()]  # Convert date to weekday name (Mon, Tue, etc.)
+            # ✅ Enforce Minimum Staffing Only for Essential Roles (Servers, Chefs, Managers)
+            essential_roles = {
+                "Server": 1,
+                "Chef": 2,
+                "Manager": 1
+            }
+
+            for role, min_required in essential_roles.items():
+                required_staff[role] = max(required_staff.get(role, 0), min_required * 2)  # Ensure AM & PM coverage
+
+            print(f"🛠 Adjusted Staffing Needs (Minimum Enforced for Essential Roles): {required_staff}")
 
             for role, count_needed in required_staff.items():
-                # Select employees available on this day
                 available_employees = [
-                    emp for emp in employees if emp.role == role and current_day in emp.availability
+                    emp for emp in employees if emp.role == role and str(current_date.weekday()) in emp.availability
                 ]
 
-                # Exclude employees with approved holidays
                 available_employees = [
                     emp for emp in available_employees if not HolidayRequest.query.filter_by(
                         employee_id=emp.id, date=current_date, status="Approved"
                     ).first()
                 ]
 
-                # Sort employees by those who have worked the least hours this week
-                available_employees.sort(key=lambda emp: sum(
-                    (s.end_time.hour - s.start_time.hour) for s in emp.shifts if s.date >= current_date - timedelta(days=current_date.weekday())
-                ))
-
-                print(f"👥 Available {role}s for {current_date.strftime('%A')}: {[emp.name for emp in available_employees]}")
+                print(f"👥 Available {role}s: {[emp.name for emp in available_employees]}")
 
                 if not available_employees:
-                    print(f"⚠️ No {role} available for {current_date}")
-                    continue  # Skip if no available employees
+                    print(f"⚠️ No {role} available for {current_date}. Skipping role if not essential...")
+                    if role in essential_roles:
+                        print(f"❌ ERROR: No essential role {role} available! Cannot generate schedule.")
+                        return {"error": f"Not enough {role}s available to cover required shifts."}, 500
+                    continue  # Skip optional roles if no employees are available
 
                 assigned_employees = []
-                for _ in range(count_needed):
+
+                # ✅ Ensure AM and PM shifts have minimum staff for essential roles
+                am_shifts = max(essential_roles.get(role, 0), count_needed // 2) if role in essential_roles else count_needed // 2
+                pm_shifts = count_needed - am_shifts
+
+                # 🔹 Adjust if not enough employees exist
+                if len(available_employees) < count_needed:
+                    am_shifts = min(len(available_employees) // 2, essential_roles.get(role, 0))
+                    pm_shifts = len(available_employees) - am_shifts
+
+                # 🔹 Assign AM shifts
+                for _ in range(am_shifts):
                     if available_employees:
                         employee = available_employees.pop(0)
-                        assigned_employees.append(employee)
+                        assigned_employees.append((employee.id, "AM"))
 
-                print(f"✅ Assigned {role}s: {[emp.name for emp in assigned_employees]}")
+                # 🔹 Assign PM shifts
+                for _ in range(pm_shifts):
+                    if available_employees:
+                        employee = available_employees.pop(0)
+                        assigned_employees.append((employee.id, "PM"))
 
-                # Split shifts between AM and PM
-                half_count = max(1, count_needed // 2)  # At least 1 person per shift
+                print(f"✅ Assigned {role}s: {assigned_employees}")
 
-                for i, employee in enumerate(assigned_employees):
-                    shift_type = "AM" if i < half_count else "PM"
-                    start_time = datetime.strptime("10:00", "%H:%M").time() if shift_type == "AM" else datetime.strptime("17:00", "%H:%M").time()
-                    end_time = datetime.strptime("17:00", "%H:%M").time() if shift_type == "AM" else datetime.strptime("23:00", "%H:%M").time()
+                for employee_id, shift_type in assigned_employees:
+                    start_time = "10:00" if shift_type == "AM" else "17:00"
+                    end_time = "17:00" if shift_type == "AM" else "23:00"
 
                     new_shift = Shift(
                         date=current_date,
                         shift_type=shift_type,
-                        start_time=start_time,
-                        end_time=end_time,
-                        employee_id=employee.id,
+                        start_time=datetime.strptime(start_time, "%H:%M").time(),
+                        end_time=datetime.strptime(end_time, "%H:%M").time(),
+                        employee_id=employee_id,
                         role=role
                     )
                     db.session.add(new_shift)
-                    print(f"✅ Shift Created: {shift_type} shift for {employee.name} ({role}) on {current_date}")
+                    print(f"✅ Shift Created: {new_shift}")
 
             current_date += timedelta(days=1)
 
         print("🔄 Committing shifts to database...")
         db.session.commit()
         print("🎉 All shifts saved successfully!")
-
-        # Check if shifts were actually saved
-        saved_shifts = Shift.query.all()
-        print(f"🛠 DEBUG: Shifts in DB after commit: {len(saved_shifts)}")
 
         return {"message": "Schedule generated successfully"}, 201
     except Exception as e:
@@ -291,6 +309,42 @@ def get_schedule():
          "employee_id": s.employee_id, "role": s.role}
         for s in shifts
     ]), 200
+
+@app.route('/schedule/<date>', methods=['GET'])
+def get_schedule_by_date(date):
+    try:
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+        shifts = Shift.query.filter_by(date=selected_date).all()
+
+        return jsonify([
+            {
+                "id": shift.id,
+                "date": shift.date.strftime("%Y-%m-%d"),
+                "shift_type": shift.shift_type,
+                "start_time": shift.start_time.strftime("%H:%M"),
+                "end_time": shift.end_time.strftime("%H:%M"),
+                "employee_id": shift.employee_id,
+                "role": shift.role
+            }
+            for shift in shifts
+        ]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/schedule/<date>', methods=['DELETE'])
+def delete_schedule_by_date(date):
+    try:
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+        deleted = Shift.query.filter_by(date=selected_date).delete()
+        db.session.commit()
+
+        if deleted:
+            print(f"🗑 Deleted all shifts for {selected_date}")
+            return jsonify({"message": f"Deleted schedule for {selected_date}"}), 200
+        else:
+            return jsonify({"message": "No shifts found for this date"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Run the app
 if __name__ == '__main__':

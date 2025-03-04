@@ -54,6 +54,35 @@ button:hover {
     background-color: #a29bfe; /* Light Purple */
 }
 
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.delete-btn:hover {
+    background-color: #cc0000;
+}
+
+.generate-btn {
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.generate-btn:hover {
+    background-color: #4834d4;
+}
+
 /* 📋 Lists */
 ul {
     list-style: none;
@@ -97,22 +126,37 @@ nav a:hover {
 }
 
 /* 📅 Tables (For Schedule Display) */
-table {
+/* 📅 Schedule Page Styles */
+.schedule-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #1e1e2f;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.schedule-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
-th, td {
+.schedule-table th, .schedule-table td {
     padding: 10px;
     text-align: center;
-    border-bottom: 1px solid #6c5ce7; /* Purple Lines */
+    border-bottom: 1px solid #6c5ce7;
 }
 
-th {
-    background-color: #6c5ce7; /* Purple */
-    color: #ffffff;
+.schedule-table th {
+    background-color: #6c5ce7;
+    color: white;
 }
+
+.schedule-table tr:hover {
+    background-color: #3a3a4e;
+}
+
 
 /* 📋 Employee Table Styles */
 table {

@@ -5,7 +5,6 @@ const Forecast = () => {
     const [date, setDate] = useState("");
     const [revenue, setRevenue] = useState("");
     const [forecasts, setForecasts] = useState([]);
-    const [editingId, setEditingId] = useState(null);
 
     // Fetch existing forecasts
     useEffect(() => {

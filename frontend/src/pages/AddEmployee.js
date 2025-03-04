@@ -47,15 +47,14 @@ const AddEmployee = () => {
         } catch (error) {
             console.error("Error deleting employee:", error);
         }
-    };
+    };    
 
     const updateEmployee = async (id) => {
         try {
             await axios.put(`http://127.0.0.1:5000/employees/${id}`, {
                 name,
                 role,
-                availability,
-                preferred_hours: preferredHours,
+                availability
             });
             setEditingId(null);
             fetchEmployees(); // Refresh list after update
@@ -63,6 +62,7 @@ const AddEmployee = () => {
             console.error("Error updating employee:", error);
         }
     };
+    
 
     return (
         <div>
@@ -91,9 +91,48 @@ const AddEmployee = () => {
                     {employees.map((emp) => (
                         <tr key={emp.id}>
                             <td>{emp.id}</td>
-                            <td>{emp.name}</td>
-                            <td>{emp.role}</td>
-                            <td>{emp.availability}</td>
+                            <td>{editingId === emp.id ? (
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                            ) : (
+                                emp.name
+                            )}</td>
+                            <td>{editingId === emp.id ? (
+                                <input
+                                    type="text"
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                />
+                            ) : (
+                                emp.role
+                            )}</td>
+                            <td>{editingId === emp.id ? (
+                                <input
+                                    type="text"
+                                    value={availability}
+                                    onChange={(e) => setAvailability(e.target.value)}
+                                />
+                            ) : (
+                                emp.availability
+                            )}</td>
+                            <td>
+                                {editingId === emp.id ? (
+                                    <button onClick={() => updateEmployee(emp.id)}>✅ Save</button>
+                                ) : (
+                                    <>
+                                        <button onClick={() => {
+                                            setEditingId(emp.id);
+                                            setName(emp.name);
+                                            setRole(emp.role);
+                                            setAvailability(emp.availability);
+                                        }}>✏️ Edit</button>
+                                        <button onClick={() => deleteEmployee(emp.id)}>🗑 Delete</button>
+                                    </>
+                                )}
+                            </td>
                         </tr>
                     ))}
                 </tbody>
