@@ -38,14 +38,23 @@ const Forecast = () => {
     };
 
     const deleteForecast = async (id) => {
+        console.log("🛑 Attempting to delete forecast with ID:", id); // Debugging
+    
+        if (!id) {
+            console.error("❌ Error: Forecast ID is undefined!");
+            return;
+        }
+    
         try {
             const res = await axios.delete(`http://127.0.0.1:5000/forecast/${id}`);
-            console.log("Delete Forecast Response:", res.data);  // Debugging
-            fetchForecasts(); // Refresh after deleting
+            console.log("✅ Delete Forecast Response:", res.data);
+            fetchForecasts(); // Refresh list after deleting
         } catch (error) {
-            console.error("Error deleting forecast:", error.response ? error.response.data : error);
+            console.error("❌ Error deleting forecast:", error.response ? error.response.data : error);
         }
     };
+    ;
+    
 
     return (
         <div className="container">
@@ -85,6 +94,7 @@ const Forecast = () => {
                         </tr>
                     )}
                 </tbody>
+
             </table>
         </div>
     );

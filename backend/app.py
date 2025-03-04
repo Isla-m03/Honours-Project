@@ -210,10 +210,12 @@ def submit_forecast():
 
 # GET method for fetching forecasts
 @app.route('/forecast', methods=['GET'])
-def get_forecast():
+def get_forecasts():
     forecasts = Forecast.query.all()
-    forecast_list = [{"date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]
-    return jsonify(forecast_list), 200
+    return jsonify([
+        {"id": f.id, "date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts
+    ]), 200
+
 
 # DELETE an Employee
 @app.route('/employees/<int:employee_id>', methods=['DELETE'])
@@ -242,16 +244,21 @@ def update_employee(employee_id):
     db.session.commit()
     return jsonify({'message': 'Employee updated successfully'}), 200
 
-# DELETE a Forecast
 @app.route('/forecast/<int:forecast_id>', methods=['DELETE'])
 def delete_forecast(forecast_id):
+    print(f"🛑 Delete request received for ID: {forecast_id}")  # Debugging
+
     forecast = Forecast.query.get(forecast_id)
     if not forecast:
+        print("❌ Forecast not found!")
         return jsonify({'error': 'Forecast not found'}), 404
 
     db.session.delete(forecast)
     db.session.commit()
+    print(f"✅ Forecast {forecast_id} deleted successfully!")
+    
     return jsonify({'message': 'Forecast deleted successfully'}), 200
+
 
 # UPDATE a Forecast
 @app.route('/forecast/<int:forecast_id>', methods=['PUT'])
