@@ -1,0 +1,130 @@
+/* 🌙 Global Theme - Purple, Black & White */
+body {
+    background-color: #121212; /* Black background */
+    color: #ffffff; /* White text */
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* 🏠 Main Container */
+.container {
+    width: 90%;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #1e1e2f; /* Dark Purple */
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* 🏷 Titles & Headings */
+h1, h2, h3 {
+    color: #a29bfe; /* Light Purple */
+    text-align: center;
+}
+
+/* 📜 Forms & Input Fields */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid #a29bfe; /* Light Purple Border */
+    border-radius: 5px;
+    background-color: #2b2b3b; /* Dark Grey */
+    color: #ffffff;
+    font-size: 16px;
+}
+
+/* ✨ Buttons */
+button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #6c5ce7; /* Purple */
+    color: #ffffff;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background-color: #a29bfe; /* Light Purple */
+}
+
+/* 📋 Lists */
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: #2b2b3b; /* Dark Grey */
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li button {
+    width: auto;
+    padding: 5px 10px;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+/* 📜 Navigation Menu */
+nav {
+    background-color: #6c5ce7; /* Purple */
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 10px 15px;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: #dfe6e9; /* Soft White */
+}
+
+/* 📅 Tables (For Schedule Display) */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #6c5ce7; /* Purple Lines */
+}
+
+th {
+    background-color: #6c5ce7; /* Purple */
+    color: #ffffff;
+}
+
+/* 📱 Mobile Responsiveness */
+@media (max-width: 600px) {
+    .container {
+        width: 95%;
+    }
+
+    button {
+        font-size: 14px;
+    }
+
+    input {
+        font-size: 14px;
+    }
+}

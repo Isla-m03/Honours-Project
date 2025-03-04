@@ -196,10 +196,17 @@ def submit_forecast():
     if not data or 'date' not in data or 'revenue' not in data:
         return jsonify({'error': 'Missing required fields'}), 400
 
-    new_forecast = Forecast(date=datetime.strptime(data['date'], "%Y-%m-%d").date(), revenue=data['revenue'])
-    db.session.add(new_forecast)
-    db.session.commit()
-    return jsonify({'message': 'Forecast added successfully'}), 201
+    try:
+        new_forecast = Forecast(
+            date=datetime.strptime(data['date'], "%Y-%m-%d").date(),
+            revenue=int(data['revenue'])
+        )
+        db.session.add(new_forecast)
+        db.session.commit()
+        return jsonify({'message': 'Forecast added successfully', 'id': new_forecast.id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # GET method for fetching forecasts
 @app.route('/forecast', methods=['GET'])
