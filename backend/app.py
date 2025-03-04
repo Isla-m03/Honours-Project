@@ -91,7 +91,7 @@ def generate_schedule(start_date, end_date):
             required_staff = get_required_staff(forecast.revenue)
             print(f"📅 {current_date}: Initial Staffing Needs: {required_staff}")
 
-            # ✅ Enforce Minimum Staffing Only for Essential Roles (Servers, Chefs, Managers)
+            # ✅ Ensure Minimum Staffing Only for Essential Roles (Servers, Chefs, Managers)
             essential_roles = {
                 "Server": 1,
                 "Chef": 2,
@@ -104,18 +104,27 @@ def generate_schedule(start_date, end_date):
             print(f"🛠 Adjusted Staffing Needs (Minimum Enforced for Essential Roles): {required_staff}")
 
             for role, count_needed in required_staff.items():
+                # 📌 Debugging: Show All Employees for this Role
+                all_role_employees = [emp.name for emp in employees if emp.role == role]
+                print(f"📋 All {role}s: {all_role_employees}")
+
+                # ✅ Check if Employee is Available on This Day
                 available_employees = [
-                    emp for emp in employees if emp.role == role and str(current_date.weekday()) in emp.availability
+                    emp for emp in employees if emp.role == role and any(str(day) in emp.availability for day in range(7))
                 ]
 
+                print(f"🛠 DEBUG: {role} Before Holiday Filtering: {[emp.name for emp in available_employees]}")
+
+                # ✅ Exclude employees on approved holiday
                 available_employees = [
                     emp for emp in available_employees if not HolidayRequest.query.filter_by(
                         employee_id=emp.id, date=current_date, status="Approved"
                     ).first()
                 ]
 
-                print(f"👥 Available {role}s: {[emp.name for emp in available_employees]}")
+                print(f"👥 Available {role}s After Filtering: {[emp.name for emp in available_employees]}")
 
+                # ❌ If No Employees Available, Skip Role (If Not Essential)
                 if not available_employees:
                     print(f"⚠️ No {role} available for {current_date}. Skipping role if not essential...")
                     if role in essential_roles:
