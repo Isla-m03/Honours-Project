@@ -7,6 +7,7 @@ const AddEmployee = () => {
     const [availability, setAvailability] = useState("");
     const [preferredHours, setPreferredHours] = useState(40);
     const [employees, setEmployees] = useState([]);
+    const [editingId, setEditingId] = useState(null);  // Track which employee is being edited
 
     useEffect(() => {
         fetchEmployees();
@@ -15,13 +16,11 @@ const AddEmployee = () => {
     const fetchEmployees = async () => {
         try {
             const res = await axios.get("http://127.0.0.1:5000/employees");
-            console.log("Fetched Employees:", res.data);  // Debugging
             setEmployees(res.data);
         } catch (error) {
             console.error("Error fetching employees:", error);
         }
     };
-    
 
     const addEmployee = async () => {
         try {
@@ -31,25 +30,61 @@ const AddEmployee = () => {
                 availability,
                 preferred_hours: preferredHours,
             });
+            setName("");
+            setRole("");
+            setAvailability("");
+            setPreferredHours(40);
             fetchEmployees(); // Refresh list
         } catch (error) {
             console.error("Error adding employee:", error);
         }
     };
 
+    const deleteEmployee = async (id) => {
+        try {
+            await axios.delete(`http://127.0.0.1:5000/employees/${id}`);
+            fetchEmployees(); // Refresh list after delete
+        } catch (error) {
+            console.error("Error deleting employee:", error);
+        }
+    };
+
+    const updateEmployee = async (id) => {
+        try {
+            await axios.put(`http://127.0.0.1:5000/employees/${id}`, {
+                name,
+                role,
+                availability,
+                preferred_hours: preferredHours,
+            });
+            setEditingId(null);
+            fetchEmployees(); // Refresh list after update
+        } catch (error) {
+            console.error("Error updating employee:", error);
+        }
+    };
+
     return (
         <div>
-            <h2>Add Employee</h2>
+            <h2>{editingId ? "Edit Employee" : "Add Employee"}</h2>
             <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
             <input type="text" placeholder="Role" value={role} onChange={(e) => setRole(e.target.value)} />
             <input type="text" placeholder="Availability (Mon-Fri 10:00-23:00)" value={availability} onChange={(e) => setAvailability(e.target.value)} />
             <input type="number" placeholder="Preferred Hours" value={preferredHours} onChange={(e) => setPreferredHours(e.target.value)} />
-            <button onClick={addEmployee}>Add Employee</button>
+            {editingId ? (
+                <button onClick={() => updateEmployee(editingId)}>Update Employee</button>
+            ) : (
+                <button onClick={addEmployee}>Add Employee</button>
+            )}
 
             <h3>Current Employees</h3>
             <ul>
                 {employees.map((emp) => (
-                    <li key={emp.id}>{emp.name} - {emp.role} ({emp.availability})</li>
+                    <li key={emp.id}>
+                        {emp.name} - {emp.role} ({emp.availability})  
+                        <button onClick={() => { setEditingId(emp.id); setName(emp.name); setRole(emp.role); setAvailability(emp.availability); setPreferredHours(emp.preferred_hours); }}>✏️ Edit</button>
+                        <button onClick={() => deleteEmployee(emp.id)}>🗑 Delete</button>
+                    </li>
                 ))}
             </ul>
         </div>
@@ -57,4 +92,3 @@ const AddEmployee = () => {
 };
 
 export default AddEmployee;
-

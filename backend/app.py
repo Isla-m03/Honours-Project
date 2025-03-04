@@ -208,6 +208,58 @@ def get_forecast():
     forecast_list = [{"date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]
     return jsonify(forecast_list), 200
 
+# DELETE an Employee
+@app.route('/employees/<int:employee_id>', methods=['DELETE'])
+def delete_employee(employee_id):
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    db.session.delete(employee)
+    db.session.commit()
+    return jsonify({'message': 'Employee deleted successfully'}), 200
+
+# UPDATE an Employee
+@app.route('/employees/<int:employee_id>', methods=['PUT'])
+def update_employee(employee_id):
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    data = request.json
+    employee.name = data.get('name', employee.name)
+    employee.role = data.get('role', employee.role)
+    employee.availability = data.get('availability', employee.availability)
+    employee.preferred_hours = data.get('preferred_hours', employee.preferred_hours)
+
+    db.session.commit()
+    return jsonify({'message': 'Employee updated successfully'}), 200
+
+# DELETE a Forecast
+@app.route('/forecast/<int:forecast_id>', methods=['DELETE'])
+def delete_forecast(forecast_id):
+    forecast = Forecast.query.get(forecast_id)
+    if not forecast:
+        return jsonify({'error': 'Forecast not found'}), 404
+
+    db.session.delete(forecast)
+    db.session.commit()
+    return jsonify({'message': 'Forecast deleted successfully'}), 200
+
+# UPDATE a Forecast
+@app.route('/forecast/<int:forecast_id>', methods=['PUT'])
+def update_forecast(forecast_id):
+    forecast = Forecast.query.get(forecast_id)
+    if not forecast:
+        return jsonify({'error': 'Forecast not found'}), 404
+
+    data = request.json
+    forecast.date = datetime.strptime(data.get('date', forecast.date.strftime("%Y-%m-%d")), "%Y-%m-%d").date()
+    forecast.revenue = data.get('revenue', forecast.revenue)
+
+    db.session.commit()
+    return jsonify({'message': 'Forecast updated successfully'}), 200
+
 @app.route('/generate_schedule', methods=['POST'])
 def generate_schedule_route():
     data = request.json
