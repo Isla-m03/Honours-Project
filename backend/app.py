@@ -354,6 +354,31 @@ def delete_schedule_by_date(date):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/holiday_requests', methods=['POST', 'GET'])
+def handle_holiday_requests():
+    if request.method == 'POST':
+        data = request.json
+        new_request = HolidayRequest(
+            employee_id=data['employee_id'],
+            date=datetime.strptime(data['date'], "%Y-%m-%d").date(),
+            status="Pending"
+        )
+        db.session.add(new_request)
+        db.session.commit()
+        return jsonify({'message': 'Holiday request submitted successfully', 'id': new_request.id}), 201
+
+    elif request.method == 'GET':
+        requests = HolidayRequest.query.all()
+        return jsonify([
+            {
+                "id": r.id,
+                "employee_id": r.employee_id,
+                "date": r.date.strftime("%Y-%m-%d"),
+                "status": r.status
+            }
+            for r in requests
+        ]), 200
+
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
