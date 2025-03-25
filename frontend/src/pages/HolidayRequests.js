@@ -5,6 +5,8 @@ const HolidayRequests = () => {
     const [employeeId, setEmployeeId] = useState("");
     const [date, setDate] = useState("");
     const [requests, setRequests] = useState([]);
+    
+    
 
     const submitRequest = async () => {
         try {
@@ -14,7 +16,7 @@ const HolidayRequests = () => {
             });
             setEmployeeId("");
             setDate("");
-            fetchRequests(); // refresh list
+            fetchRequests();
         } catch (error) {
             console.error("Error submitting request:", error);
         }
@@ -26,6 +28,17 @@ const HolidayRequests = () => {
             setRequests(res.data);
         } catch (error) {
             console.error("Error fetching requests:", error);
+        }
+    };
+
+    const handleUpdate = async (id, newStatus) => {
+        try {
+            await axios.put(`http://127.0.0.1:5000/holiday_requests/${id}`, {
+                status: newStatus,
+            });
+            fetchRequests(); // refresh after update
+        } catch (error) {
+            console.error("Error updating request:", error);
         }
     };
 
@@ -57,6 +70,7 @@ const HolidayRequests = () => {
                         <th>Employee ID</th>
                         <th>Date</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -66,6 +80,10 @@ const HolidayRequests = () => {
                             <td>{r.employee_id}</td>
                             <td>{r.date}</td>
                             <td>{r.status}</td>
+                            <td>
+                                <button onClick={() => handleUpdate(r.id, "Approved")}>Approve</button>
+                                <button onClick={() => handleUpdate(r.id, "Rejected")}>Reject</button>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
@@ -75,3 +93,4 @@ const HolidayRequests = () => {
 };
 
 export default HolidayRequests;
+

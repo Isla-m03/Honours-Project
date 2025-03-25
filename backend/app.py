@@ -379,6 +379,17 @@ def handle_holiday_requests():
             for r in requests
         ]), 200
 
+@app.route('/holiday_requests/<int:request_id>', methods=['PUT'])
+def update_holiday_request(request_id):
+    request_data = HolidayRequest.query.get(request_id)
+    if not request_data:
+        return jsonify({'error': 'Request not found'}), 404
+
+    data = request.json
+    request_data.status = data.get("status", request_data.status)
+    db.session.commit()
+    return jsonify({'message': 'Holiday request updated successfully'}), 200
+
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
