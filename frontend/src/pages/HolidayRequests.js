@@ -5,8 +5,8 @@ const HolidayRequests = () => {
     const [employeeId, setEmployeeId] = useState("");
     const [date, setDate] = useState("");
     const [requests, setRequests] = useState([]);
-    
-    
+    const [filter, setFilter] = useState("All");
+
 
     const submitRequest = async () => {
         try {
@@ -62,6 +62,14 @@ const HolidayRequests = () => {
             />
             <button onClick={submitRequest}>Submit</button>
 
+`           <label>Filter by Status: </label>
+            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value="All">All</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+`
             <h3>Current Holiday Requests</h3>
             <table border="1">
                 <thead>
@@ -74,7 +82,9 @@ const HolidayRequests = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {requests.map((r) => (
+                {requests
+                    .filter((r) => filter === "All" || r.status === filter)
+                    .map((r) => (
                         <tr key={r.id}>
                             <td>{r.id}</td>
                             <td>{r.employee_id}</td>
@@ -85,7 +95,7 @@ const HolidayRequests = () => {
                                 <button onClick={() => handleUpdate(r.id, "Rejected")}>Reject</button>
                             </td>
                         </tr>
-                    ))}
+                ))}
                 </tbody>
             </table>
         </div>
