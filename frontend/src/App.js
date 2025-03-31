@@ -1,28 +1,22 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
-import GenerateSchedule from "./pages/GenerateSchedule";
-import AddEmployee from "./pages/AddEmployee";
-import Forecast from "./pages/Forecast";
-import HolidayRequests from "./pages/HolidayRequests";
+import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
+import AddEmployee from "./AddEmployee";
+import Forecast from "./Forecast";
+import GenerateSchedule from "./GenerateSchedule";
+import HolidayRequests from "./HolidayRequests";
 
 const App = () => {
+    const token = localStorage.getItem("token");
+
     return (
         <Router>
-            <div style={{ padding: "20px" }}>
-                <h1>Workplace Scheduler</h1>
-                <nav style={{ marginBottom: "20px" }}>
-                    <Link to="/" style={{ marginRight: "10px" }}>Generate Schedule</Link> | 
-                    <Link to="/add-employee" style={{ marginRight: "10px" }}>Add Employee</Link> | 
-                    <Link to="/forecast" style={{ marginRight: "10px" }}>Update Forecast</Link> | 
-                    <Link to="/holiday-requests">Holiday Requests</Link>
-                </nav>
-                <Routes>
-                    <Route path="/" element={<GenerateSchedule />} />
-                    <Route path="/add-employee" element={<AddEmployee />} />
-                    <Route path="/forecast" element={<Forecast />} />
-                    <Route path="/holiday-requests" element={<HolidayRequests />} />
-                </Routes>
-            </div>
+            <Routes>
+                <Route path="/" element={token ? <Navigate to="/employees" /> : <Navigate to="/login" />} />
+                <Route path="/employees" element={<AddEmployee />} />
+                <Route path="/forecast" element={<Forecast />} />
+                <Route path="/schedule" element={<GenerateSchedule />} />
+                <Route path="/holidays" element={<HolidayRequests />} />
+            </Routes>
         </Router>
     );
 };
