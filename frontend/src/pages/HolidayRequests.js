@@ -104,4 +104,3 @@ const HolidayRequests = () => {
 };
 
 export default HolidayRequests;
-

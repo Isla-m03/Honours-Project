@@ -6,9 +6,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
 
-# === App Config ===
 app = Flask(__name__)
 CORS(app)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.abspath(os.path.dirname(__file__)), 'scheduler.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'super-secret-key'
@@ -16,7 +16,8 @@ app.config['JWT_SECRET_KEY'] = 'super-secret-key'
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
-# === Models ===
+# === MODELS ===
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -62,7 +63,8 @@ class HolidayRequest(db.Model):
 with app.app_context():
     db.create_all()
 
-# === Auth Routes ===
+# === AUTH ===
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -83,7 +85,8 @@ def login():
         return jsonify({"token": token, "user_id": user.id}), 200
     return jsonify({"error": "Invalid username or password"}), 401
 
-# === Utility ===
+# === HELPERS ===
+
 def get_required_staff(revenue):
     if revenue < 1000:
         return {"Server": 1, "Chef": 2, "Manager": 1}
@@ -96,7 +99,8 @@ def get_required_staff(revenue):
     else:
         return {"Server": 10, "Chef": 7, "Bartender": 2, "Server Assistant": 3, "Door Host": 2, "Manager": 3}
 
-# === Protected CRUD Routes ===
+# === CRUD ROUTES ===
+
 @app.route('/employees', methods=['POST', 'GET'])
 @jwt_required()
 def employees():
@@ -108,9 +112,24 @@ def employees():
         db.session.add(emp)
         db.session.commit()
         return jsonify({"message": "Employee added", "id": emp.id}), 201
-    else:
-        employees = Employee.query.filter_by(user_id=user_id).all()
-        return jsonify([{"id": e.id, "name": e.name, "role": e.role, "availability": e.availability} for e in employees]), 200
+    employees = Employee.query.filter_by(user_id=user_id).all()
+    return jsonify([{"id": e.id, "name": e.name, "role": e.role, "availability": e.availability} for e in employees]), 200
+
+@app.route('/employees/<int:employee_id>', methods=['PUT', 'DELETE'])
+@jwt_required()
+def modify_employee(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    if request.method == 'PUT':
+        data = request.json
+        employee.name = data.get('name', employee.name)
+        employee.role = data.get('role', employee.role)
+        employee.availability = data.get('availability', employee.availability)
+        employee.preferred_hours = data.get('preferred_hours', employee.preferred_hours)
+        db.session.commit()
+        return jsonify({"message": "Employee updated"}), 200
+    db.session.delete(employee)
+    db.session.commit()
+    return jsonify({"message": "Employee deleted"}), 200
 
 @app.route('/forecast', methods=['POST', 'GET'])
 @jwt_required()
@@ -122,9 +141,22 @@ def forecast():
         db.session.add(f)
         db.session.commit()
         return jsonify({"message": "Forecast added", "id": f.id}), 201
-    else:
-        forecasts = Forecast.query.filter_by(user_id=user_id).all()
-        return jsonify([{"id": f.id, "date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]), 200
+    forecasts = Forecast.query.filter_by(user_id=user_id).all()
+    return jsonify([{"id": f.id, "date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue} for f in forecasts]), 200
+
+@app.route('/forecast/<int:forecast_id>', methods=['PUT', 'DELETE'])
+@jwt_required()
+def modify_forecast(forecast_id):
+    forecast = Forecast.query.get_or_404(forecast_id)
+    if request.method == 'PUT':
+        data = request.json
+        forecast.date = datetime.strptime(data['date'], "%Y-%m-%d").date()
+        forecast.revenue = data['revenue']
+        db.session.commit()
+        return jsonify({"message": "Forecast updated"}), 200
+    db.session.delete(forecast)
+    db.session.commit()
+    return jsonify({"message": "Forecast deleted"}), 200
 
 @app.route('/holiday_requests', methods=['POST', 'GET'])
 @jwt_required()
@@ -136,9 +168,16 @@ def holiday_requests():
         db.session.add(h)
         db.session.commit()
         return jsonify({"message": "Request submitted", "id": h.id}), 201
-    else:
-        requests = HolidayRequest.query.filter_by(user_id=user_id).all()
-        return jsonify([{"id": r.id, "employee_id": r.employee_id, "date": r.date.strftime("%Y-%m-%d"), "status": r.status} for r in requests]), 200
+    requests = HolidayRequest.query.filter_by(user_id=user_id).all()
+    return jsonify([{"id": r.id, "employee_id": r.employee_id, "date": r.date.strftime("%Y-%m-%d"), "status": r.status} for r in requests]), 200
+
+@app.route('/holiday_requests/<int:request_id>', methods=['PUT'])
+@jwt_required()
+def update_holiday_request(request_id):
+    req = HolidayRequest.query.get_or_404(request_id)
+    req.status = request.json.get("status", req.status)
+    db.session.commit()
+    return jsonify({"message": "Request status updated"}), 200
 
 @app.route('/generate_schedule', methods=['POST'])
 @jwt_required()
@@ -177,10 +216,18 @@ def get_schedule():
         for s in shifts
     ]), 200
 
+@app.route('/schedule/<date>', methods=['DELETE'])
+@jwt_required()
+def delete_schedule_by_date(date):
+    user_id = get_jwt_identity()
+    target_date = datetime.strptime(date, "%Y-%m-%d").date()
+    Shift.query.filter_by(user_id=user_id, date=target_date).delete()
+    db.session.commit()
+    return jsonify({"message": f"Schedule deleted for {target_date}"}), 200
+
 @app.route('/')
 def home():
     return "✅ Employee Scheduling API is running."
 
-# === Main Entrypoint ===
 if __name__ == "__main__":
     app.run(debug=True)

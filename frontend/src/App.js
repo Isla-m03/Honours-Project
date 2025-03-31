@@ -1,13 +1,12 @@
-import React, { useState, useEffect, createContext } from "react";
+import React, { useState, createContext } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import axios from "axios";
 import Navbar from "./Navbar";
-import AddEmployee from "./AddEmployee";
-import Forecast from "./Forecast";
-import GenerateSchedule from "./GenerateSchedule";
-import HolidayRequests from "./HolidayRequests";
-import Login from "./Login";
-import Register from "./Register";
+import AddEmployee from "./pages/AddEmployee";
+import Forecast from "./pages/Forecast";
+import GenerateSchedule from "./pages/GenerateSchedule";
+import HolidayRequests from "./pages/HolidayRequests";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 export const UserContext = createContext();
 
@@ -35,23 +34,10 @@ const App = () => {
           <Route path="/" element={<Navigate to="/employees" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-
-          <Route
-            path="/employees"
-            element={user ? <AddEmployee /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/forecast"
-            element={user ? <Forecast /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/schedule"
-            element={user ? <GenerateSchedule /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/holiday"
-            element={user ? <HolidayRequests /> : <Navigate to="/login" />}
-          />
+          <Route path="/employees" element={user ? <AddEmployee /> : <Navigate to="/login" />} />
+          <Route path="/forecast" element={user ? <Forecast /> : <Navigate to="/login" />} />
+          <Route path="/schedule" element={user ? <GenerateSchedule /> : <Navigate to="/login" />} />
+          <Route path="/holiday" element={user ? <HolidayRequests /> : <Navigate to="/login" />} />
         </Routes>
       </Router>
     </UserContext.Provider>

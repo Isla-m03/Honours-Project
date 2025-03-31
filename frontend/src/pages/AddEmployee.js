@@ -1,65 +1,83 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const AddEmployee = () => {
-    const [employees, setEmployees] = useState([]);
-    const [formData, setFormData] = useState({
-        name: "",
-        role: "",
-        availability: "",
-        preferred_hours: 40,
-    });
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [availability, setAvailability] = useState("");
+  const [preferredHours, setPreferredHours] = useState(40);
+  const [employees, setEmployees] = useState([]);
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  const headers = { Authorization: `Bearer ${token}` };
 
-    const fetchEmployees = async () => {
-        try {
-            const res = await axios.get("http://127.0.0.1:5000/employees", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            setEmployees(res.data);
-        } catch (error) {
-            console.error("Error fetching employees:", error);
-        }
-    };
+  const fetchEmployees = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:5000/employees", { headers });
+      setEmployees(res.data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
-    const handleAdd = async () => {
-        try {
-            await axios.post("http://127.0.0.1:5000/employees", formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            fetchEmployees();
-        } catch (error) {
-            console.error("Error adding employee:", error);
-        }
-    };
+  const addEmployee = async () => {
+    try {
+      await axios.post(
+        "http://127.0.0.1:5000/employees",
+        { name, role, availability, preferred_hours: preferredHours },
+        { headers }
+      );
+      setName("");
+      setRole("");
+      setAvailability("");
+      setPreferredHours(40);
+      fetchEmployees();
+    } catch (error) {
+      console.error("Error adding employee:", error);
+    }
+  };
 
-    useEffect(() => {
-        fetchEmployees();
-    }, []);
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
 
-    return (
-        <div>
-            <h2>Add Employee</h2>
-            <input placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
-            <input placeholder="Role" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} />
-            <input placeholder="Availability" value={formData.availability} onChange={(e) => setFormData({...formData, availability: e.target.value})} />
-            <input placeholder="Preferred Hours" type="number" value={formData.preferred_hours} onChange={(e) => setFormData({...formData, preferred_hours: parseInt(e.target.value)})} />
-            <button onClick={handleAdd}>Add</button>
+  return (
+    <div>
+      <h2>Add Employee</h2>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+      <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role" />
+      <input value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Availability" />
+      <input
+        type="number"
+        value={preferredHours}
+        onChange={(e) => setPreferredHours(e.target.value)}
+        placeholder="Preferred Hours"
+      />
+      <button onClick={addEmployee}>Add</button>
 
-            <h3>Current Employees</h3>
-            <ul>
-                {employees.map((emp) => (
-                    <li key={emp.id}>{emp.name} - {emp.role}</li>
-                ))}
-            </ul>
-        </div>
-    );
+      <h3>Current Employees</h3>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Availability</th>
+          </tr>
+        </thead>
+        <tbody>
+          {employees.map((e) => (
+            <tr key={e.id}>
+              <td>{e.id}</td>
+              <td>{e.name}</td>
+              <td>{e.role}</td>
+              <td>{e.availability}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
 export default AddEmployee;
