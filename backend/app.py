@@ -83,9 +83,12 @@ def register():
 def login():
     data = request.json
     user = User.query.filter_by(username=data["username"]).first()
+
     if user and user.check_password(data["password"]):
-        token = create_access_token(identity=user.id)
+        # ✅ Convert user.id to string to meet JWT requirements
+        token = create_access_token(identity=str(user.id))
         return jsonify({"token": token, "user_id": user.id}), 200
+
     return jsonify({"error": "Invalid credentials"}), 401
 
 # ======================= EMPLOYEES ==========================
