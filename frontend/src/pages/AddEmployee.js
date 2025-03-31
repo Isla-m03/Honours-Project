@@ -1,81 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
+import { UserContext } from "../App";
 
 const AddEmployee = () => {
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [availability, setAvailability] = useState("");
-  const [preferredHours, setPreferredHours] = useState(40);
-  const [employees, setEmployees] = useState([]);
+  const { user } = useContext(UserContext);
+  const token = user?.token;
 
-  const token = localStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+  const [employees, setEmployees] = useState([]);
+  const [form, setForm] = useState({ name: "", role: "", availability: "", preferred_hours: 40 });
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:5000/employees", { headers });
+      const res = await axios.get("http://localhost:5000/employees", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setEmployees(res.data);
-    } catch (error) {
-      console.error("Error fetching employees:", error);
+    } catch (err) {
+      console.error("Fetch Employees Error:", err);
     }
   };
 
-  const addEmployee = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await axios.post(
-        "http://127.0.0.1:5000/employees",
-        { name, role, availability, preferred_hours: preferredHours },
-        { headers }
-      );
-      setName("");
-      setRole("");
-      setAvailability("");
-      setPreferredHours(40);
+      await axios.post("http://localhost:5000/employees", form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setForm({ name: "", role: "", availability: "", preferred_hours: 40 });
       fetchEmployees();
-    } catch (error) {
-      console.error("Error adding employee:", error);
+    } catch (err) {
+      console.error("Add Employee Error:", err);
     }
   };
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    if (token) fetchEmployees();
+  }, [token]);
 
   return (
-    <div>
+    <div style={{ padding: 20 }}>
       <h2>Add Employee</h2>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-      <input value={role} onChange={(e) => setRole(e.target.value)} placeholder="Role" />
-      <input value={availability} onChange={(e) => setAvailability(e.target.value)} placeholder="Availability" />
-      <input
-        type="number"
-        value={preferredHours}
-        onChange={(e) => setPreferredHours(e.target.value)}
-        placeholder="Preferred Hours"
-      />
-      <button onClick={addEmployee}>Add</button>
+      <form onSubmit={handleSubmit}>
+        <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <input placeholder="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} required />
+        <input placeholder="Availability" value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })} required />
+        <input type="number" placeholder="Preferred Hours" value={form.preferred_hours} onChange={(e) => setForm({ ...form, preferred_hours: e.target.value })} />
+        <button type="submit">Add</button>
+      </form>
 
       <h3>Current Employees</h3>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Availability</th>
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((e) => (
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.name}</td>
-              <td>{e.role}</td>
-              <td>{e.availability}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul>
+        {employees.map(emp => (
+          <li key={emp.id}>{emp.name} ({emp.role}) - {emp.availability}</li>
+        ))}
+      </ul>
     </div>
   );
 };

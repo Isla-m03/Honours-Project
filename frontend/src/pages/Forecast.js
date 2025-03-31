@@ -1,90 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
+import { UserContext } from "../App";
 
 const Forecast = () => {
-  const [date, setDate] = useState("");
-  const [revenue, setRevenue] = useState("");
-  const [forecasts, setForecasts] = useState([]);
+  const { user } = useContext(UserContext);
+  const token = user?.token;
 
-  const token = localStorage.getItem("token");
-  const headers = { Authorization: `Bearer ${token}` };
+  const [forecasts, setForecasts] = useState([]);
+  const [form, setForm] = useState({ date: "", revenue: "" });
 
   const fetchForecasts = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:5000/forecast", { headers });
+      const res = await axios.get("http://localhost:5000/forecast", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setForecasts(res.data);
-    } catch (error) {
-      console.error("Error fetching forecasts:", error);
+    } catch (err) {
+      console.error("❌ Forecast Fetch Error:", err);
     }
   };
 
-  const addForecast = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await axios.post(
-        "http://127.0.0.1:5000/forecast",
-        { date, revenue: parseInt(revenue) },
-        { headers }
-      );
-      setDate("");
-      setRevenue("");
+      await axios.post("http://localhost:5000/forecast", form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setForm({ date: "", revenue: "" });
       fetchForecasts();
-    } catch (error) {
-      console.error("Error adding forecast:", error);
-    }
-  };
-
-  const deleteForecast = async (id) => {
-    try {
-      await axios.delete(`http://127.0.0.1:5000/forecast/${id}`, { headers });
-      fetchForecasts();
-    } catch (error) {
-      console.error("Error deleting forecast:", error);
+    } catch (err) {
+      console.error("❌ Forecast Submit Error:", err);
     }
   };
 
   useEffect(() => {
-    fetchForecasts();
-  }, []);
+    if (token) fetchForecasts();
+  }, [token]);
 
   return (
-    <div>
+    <div style={{ padding: 20 }}>
       <h2>Add Forecast</h2>
-      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      <input
-        type="number"
-        placeholder="Revenue"
-        value={revenue}
-        onChange={(e) => setRevenue(e.target.value)}
-      />
-      <button onClick={addForecast}>Add Forecast</button>
+      <form onSubmit={handleSubmit}>
+        <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+        <input type="number" value={form.revenue} onChange={(e) => setForm({ ...form, revenue: e.target.value })} placeholder="Revenue" required />
+        <button type="submit">Add Forecast</button>
+      </form>
 
       <h3>Forecasts</h3>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Revenue</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {forecasts.map((f) => (
-            <tr key={f.id}>
-              <td>{f.id}</td>
-              <td>{f.date}</td>
-              <td>{f.revenue}</td>
-              <td>
-                <button onClick={() => deleteForecast(f.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul>
+        {forecasts.map(f => (
+          <li key={f.id}>{f.date} - £{f.revenue}</li>
+        ))}
+      </ul>
     </div>
   );
 };
 
 export default Forecast;
-
-

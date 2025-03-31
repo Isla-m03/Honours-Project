@@ -1,106 +1,108 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
+import { UserContext } from "../App";
 
 const HolidayRequests = () => {
-    const [employeeId, setEmployeeId] = useState("");
-    const [date, setDate] = useState("");
-    const [requests, setRequests] = useState([]);
-    const [filter, setFilter] = useState("All");
+  const [requests, setRequests] = useState([]);
+  const [form, setForm] = useState({ employee_id: "", date: "" });
+  const { user } = useContext(UserContext);
 
-    const token = localStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
+  const fetchRequests = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:5000/holiday_requests", {
+        headers: { Authorization: `Bearer ${user.token}` },
+        params: { user_id: user.id }
+      });
+      setRequests(res.data);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+    }
+  };
 
-    const submitRequest = async () => {
-        try {
-            await axios.post(
-                "http://127.0.0.1:5000/holiday_requests",
-                { employee_id: parseInt(employeeId), date },
-                { headers }
-            );
-            setEmployeeId("");
-            setDate("");
-            fetchRequests();
-        } catch (error) {
-            console.error("Error submitting request:", error);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(
+        "http://127.0.0.1:5000/holiday_requests",
+        {
+          employee_id: form.employee_id,
+          date: form.date,
+          user_id: user.id
+        },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      setForm({ employee_id: "", date: "" });
+      fetchRequests();
+    } catch (err) {
+      console.error("Error submitting request:", err);
+    }
+  };
 
-    const fetchRequests = async () => {
-        try {
-            const res = await axios.get("http://127.0.0.1:5000/holiday_requests", { headers });
-            setRequests(res.data);
-        } catch (error) {
-            console.error("Error fetching requests:", error);
-        }
-    };
+  const handleUpdate = async (id, status) => {
+    try {
+      await axios.put(
+        `http://127.0.0.1:5000/holiday_requests/${id}`,
+        { status },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      fetchRequests();
+    } catch (err) {
+      console.error("Error updating request:", err);
+    }
+  };
 
-    const handleUpdate = async (id, newStatus) => {
-        try {
-            await axios.put(
-                `http://127.0.0.1:5000/holiday_requests/${id}`,
-                { status: newStatus },
-                { headers }
-            );
-            fetchRequests();
-        } catch (error) {
-            console.error("Error updating request:", error);
-        }
-    };
+  useEffect(() => {
+    if (user) fetchRequests();
+  }, [user]);
 
-    useEffect(() => {
-        fetchRequests();
-    }, []);
+  return (
+    <div>
+      <h2>Holiday Request</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="number"
+          placeholder="Employee ID"
+          value={form.employee_id}
+          onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+          required
+        />
+        <input
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+          required
+        />
+        <button type="submit">Submit Request</button>
+      </form>
 
-    return (
-        <div>
-            <h2>Submit Holiday Request</h2>
-            <input
-                type="number"
-                placeholder="Employee ID"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-            />
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            <button onClick={submitRequest}>Submit</button>
-
-            <label>Filter by Status: </label>
-            <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-                <option value="All">All</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-            </select>
-
-            <h3>Current Holiday Requests</h3>
-            <table border="1">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Employee ID</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {requests
-                        .filter((r) => filter === "All" || r.status === filter)
-                        .map((r) => (
-                            <tr key={r.id}>
-                                <td>{r.id}</td>
-                                <td>{r.employee_id}</td>
-                                <td>{r.date}</td>
-                                <td>{r.status}</td>
-                                <td>
-                                    <button onClick={() => handleUpdate(r.id, "Approved")}>Approve</button>
-                                    <button onClick={() => handleUpdate(r.id, "Rejected")}>Reject</button>
-                                </td>
-                            </tr>
-                        ))}
-                </tbody>
-            </table>
-        </div>
-    );
+      <h3>Current Requests</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Employee ID</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requests.map((req) => (
+            <tr key={req.id}>
+              <td>{req.id}</td>
+              <td>{req.employee_id}</td>
+              <td>{req.date}</td>
+              <td>{req.status}</td>
+              <td>
+                <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>
+                <button onClick={() => handleUpdate(req.id, "Rejected")}>Reject</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 };
 
 export default HolidayRequests;
