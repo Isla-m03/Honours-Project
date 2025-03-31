@@ -15,7 +15,7 @@ const HolidayRequests = () => {
       });
       setRequests(res.data);
     } catch (err) {
-      console.error("Error fetching requests:", err);
+      console.error("❌ Error fetching requests:", err);
     }
   };
 
@@ -34,20 +34,20 @@ const HolidayRequests = () => {
       setForm({ employee_id: "", date: "" });
       fetchRequests();
     } catch (err) {
-      console.error("Error submitting request:", err);
+      console.error("❌ Error submitting request:", err);
     }
   };
 
-  const handleUpdate = async (id, status) => {
+  const handleUpdate = async (requestId, newStatus) => {
     try {
       await axios.put(
-        `http://127.0.0.1:5000/holiday_requests/${id}`,
-        { status },
+        `http://127.0.0.1:5000/holiday_requests/${requestId}`,
+        { status: newStatus },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       fetchRequests();
     } catch (err) {
-      console.error("Error updating request:", err);
+      console.error("❌ Error updating request:", err);
     }
   };
 
@@ -56,9 +56,9 @@ const HolidayRequests = () => {
   }, [user]);
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2>Holiday Request</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
         <input
           type="number"
           placeholder="Employee ID"
@@ -76,7 +76,7 @@ const HolidayRequests = () => {
       </form>
 
       <h3>Current Requests</h3>
-      <table>
+      <table border="1" cellPadding="8" style={{ width: "100%" }}>
         <thead>
           <tr>
             <th>ID</th>
@@ -94,7 +94,7 @@ const HolidayRequests = () => {
               <td>{req.date}</td>
               <td>{req.status}</td>
               <td>
-                <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>
+                <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>{" "}
                 <button onClick={() => handleUpdate(req.id, "Rejected")}>Reject</button>
               </td>
             </tr>

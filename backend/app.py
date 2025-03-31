@@ -176,8 +176,30 @@ def holiday_requests():
         "date": r.date.strftime("%Y-%m-%d"), "status": r.status
     } for r in requests]), 200
 
+@app.route('/holiday_requests/<int:request_id>', methods=['PUT'])
+@jwt_required()
+def update_holiday_request(request_id):
+    try:
+        request_data = request.json
+        new_status = request_data.get("status")
+        if new_status not in ["Approved", "Rejected"]:
+            return jsonify({"error": "Invalid status"}), 400
+
+        holiday_request = HolidayRequest.query.get(request_id)
+        if not holiday_request:
+            return jsonify({"error": "Holiday request not found"}), 404
+
+        holiday_request.status = new_status
+        db.session.commit()
+        return jsonify({"message": f"Holiday request {new_status.lower()}"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ======================= SCHEDULE ==========================
 
+# Generate schedule
 @app.route("/generate_schedule", methods=["POST"])
 @jwt_required()
 def generate_schedule():
@@ -193,7 +215,6 @@ def generate_schedule():
     while current_date <= end_date:
         revenue = forecasts.get(current_date, 0)
 
-        # logic example: adjust for revenue
         required_roles = {
             "Chef": 2 if revenue > 0 else 0,
             "Server": 2 if revenue > 0 else 0,
@@ -219,19 +240,74 @@ def generate_schedule():
     db.session.commit()
     return jsonify({"message": "Schedule generated"}), 201
 
+
+# Get all shifts
 @app.route("/schedule", methods=["GET"])
 @jwt_required()
 def get_schedule():
     user_id = get_jwt_identity()
     shifts = Shift.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": s.id, "date": s.date.strftime("%Y-%m-%d"),
-        "shift_type": s.shift_type,
-        "start_time": s.start_time.strftime("%H:%M"),
-        "end_time": s.end_time.strftime("%H:%M"),
-        "employee_id": s.employee_id,
-        "role": s.role
-    } for s in shifts]), 200
+
+    result = []
+    for s in shifts:
+        emp = Employee.query.get(s.employee_id)
+        result.append({
+            "id": s.id,
+            "date": s.date.strftime("%Y-%m-%d"),
+            "shift_type": s.shift_type,
+            "start_time": s.start_time.strftime("%H:%M"),
+            "end_time": s.end_time.strftime("%H:%M"),
+            "employee_id": s.employee_id,
+            "employee_name": emp.name if emp else "Unknown",
+            "role": s.role
+        })
+    return jsonify(result), 200
+
+
+# Get shifts for a specific date
+@app.route('/schedule/<date>', methods=['GET'])
+@jwt_required()
+def get_schedule_by_date(date):
+    try:
+        user_id = get_jwt_identity()
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+        shifts = Shift.query.filter_by(date=selected_date, user_id=user_id).all()
+
+        result = []
+        for s in shifts:
+            emp = Employee.query.get(s.employee_id)
+            result.append({
+                "id": s.id,
+                "date": s.date.strftime("%Y-%m-%d"),
+                "shift_type": s.shift_type,
+                "start_time": s.start_time.strftime("%H:%M"),
+                "end_time": s.end_time.strftime("%H:%M"),
+                "employee_id": s.employee_id,
+                "employee_name": emp.name if emp else "Unknown",
+                "role": s.role
+            })
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Delete shifts for a specific date
+@app.route('/schedule/<date>', methods=['DELETE'])
+@jwt_required()
+def delete_schedule_by_date(date):
+    try:
+        user_id = get_jwt_identity()
+        selected_date = datetime.strptime(date, "%Y-%m-%d").date()
+        deleted = Shift.query.filter_by(date=selected_date, user_id=user_id).delete()
+        db.session.commit()
+
+        if deleted:
+            return jsonify({"message": f"Deleted schedule for {selected_date}"}), 200
+        else:
+            return jsonify({"message": "No shifts found for this date"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # ======================= START ==========================
 

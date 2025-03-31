@@ -33,6 +33,17 @@ const Forecast = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/forecast/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchForecasts();
+    } catch (err) {
+      console.error("❌ Forecast Delete Error:", err);
+    }
+  };
+
   useEffect(() => {
     if (token) fetchForecasts();
   }, [token]);
@@ -49,7 +60,10 @@ const Forecast = () => {
       <h3>Forecasts</h3>
       <ul>
         {forecasts.map(f => (
-          <li key={f.id}>{f.date} - £{f.revenue}</li>
+          <li key={f.id}>
+            ID: {f.id} — {f.date} — £{f.revenue}
+            <button onClick={() => handleDelete(f.id)} style={{ marginLeft: 10 }}>Delete</button>
+          </li>
         ))}
       </ul>
     </div>

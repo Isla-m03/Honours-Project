@@ -33,6 +33,17 @@ const AddEmployee = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/employees/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchEmployees();
+    } catch (err) {
+      console.error("Delete Employee Error:", err);
+    }
+  };
+
   useEffect(() => {
     if (token) fetchEmployees();
   }, [token]);
@@ -51,7 +62,10 @@ const AddEmployee = () => {
       <h3>Current Employees</h3>
       <ul>
         {employees.map(emp => (
-          <li key={emp.id}>{emp.name} ({emp.role}) - {emp.availability}</li>
+          <li key={emp.id}>
+            ID: {emp.id} — {emp.name} ({emp.role}) — {emp.availability}
+            <button onClick={() => handleDelete(emp.id)} style={{ marginLeft: 10 }}>Delete</button>
+          </li>
         ))}
       </ul>
     </div>
@@ -59,3 +73,4 @@ const AddEmployee = () => {
 };
 
 export default AddEmployee;
+
