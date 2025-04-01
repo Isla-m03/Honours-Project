@@ -13,7 +13,9 @@ const Navbar = () => {
 
   return (
     <nav style={styles.navbar}>
-      <h2 style={styles.logo}>ShiftSmart</h2>
+      <div style={styles.left}>
+        <img src="/logo.png" alt="Logo" style={styles.logo} />
+      </div>
       <div style={styles.links}>
         {user ? (
           <>
@@ -21,7 +23,7 @@ const Navbar = () => {
             <Link to="/forecast" style={styles.link}>Forecast</Link>
             <Link to="/schedule" style={styles.link}>Schedule</Link>
             <Link to="/holiday" style={styles.link}>Holiday</Link>
-            <button onClick={handleLogout} style={styles.button}>Logout</button>
+            <button className="logout-btn" onClick={handleLogout}>Logout</button>
           </>
         ) : (
           <>
@@ -43,7 +45,15 @@ const styles = {
     backgroundColor: "#1e1e2f",
     color: "white"
   },
+  left: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px"
+  },
   logo: {
+    height: "170px"
+  },
+  title: {
     margin: 0
   },
   links: {
@@ -53,13 +63,6 @@ const styles = {
   link: {
     color: "white",
     textDecoration: "none"
-  },
-  button: {
-    backgroundColor: "#6a0dad",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    cursor: "pointer"
   }
 };
 

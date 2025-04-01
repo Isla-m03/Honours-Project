@@ -266,17 +266,41 @@ def generate_schedule():
 
     current_date = start_date
     while current_date <= end_date:
-        # 🧹 Delete existing shifts for this user on the same date
+        # Clear existing shifts for the day
         Shift.query.filter_by(user_id=user_id, date=current_date).delete()
 
         revenue = forecasts.get(current_date, 0)
 
-        # Logic: Adjust based on revenue
-        required_roles = {
-            "Chef": 2 if revenue > 0 else 0,
-            "Server": 2 if revenue > 0 else 0,
-            "Manager": 1 if revenue > 0 else 0,
-        }
+        if revenue < 1000:
+            required_roles = {"Chef": 1, "Server": 1, "Manager": 1}
+        elif revenue < 2000:
+            required_roles = {"Chef": 2, "Server": 2, "Manager": 1}
+        elif revenue < 4000:
+            required_roles = {"Chef": 3, "Server": 3, "Manager": 1, "Bartender": 1}
+        elif revenue < 6000:
+            required_roles = {
+                "Chef": 4, "Server": 5, "Manager": 2,
+                "Bartender": 1, "Door Host": 1, "Server Assistant": 1
+            }
+        elif revenue < 8000:
+            required_roles = {
+                "Chef": 6, "Server": 7, "Manager": 2,
+                "Bartender": 2, "Door Host": 1, "Server Assistant": 2
+            }
+        elif revenue < 10000:
+            required_roles = {
+                "Chef": 7, "Server": 8, "Manager": 2,
+                "Bartender": 2, "Door Host": 1, "Server Assistant": 2
+            }
+        else:
+            required_roles = {
+                "Chef": 8, "Server": 10, "Manager": 3,
+                "Bartender": 3, "Door Host": 2, "Server Assistant": 3
+            }
+
+        # Enforce essential coverage
+        for essential in ["Chef", "Server", "Manager"]:
+            required_roles[essential] = max(required_roles.get(essential, 0), 2)
 
         for role, count in required_roles.items():
             available = [e for e in employees if e.role == role]
@@ -296,8 +320,7 @@ def generate_schedule():
         current_date += timedelta(days=1)
 
     db.session.commit()
-    return jsonify({"message": "Schedule generated"}), 201
-
+    return jsonify({"message": "Schedule generated with essential coverage."}), 201
 
 # Get all shifts
 @app.route("/schedule", methods=["GET"])

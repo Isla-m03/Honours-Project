@@ -1,4 +1,4 @@
-import React, { useState, createContext } from "react";
+import React, { useState, useEffect, createContext } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import AddEmployee from "./pages/AddEmployee";
@@ -16,6 +16,11 @@ const App = () => {
     return stored ? { token: stored } : null;
   });
 
+  useEffect(() => {
+    localStorage.removeItem("token");
+    setUser(null);
+  }, []);
+
   const login = (token) => {
     localStorage.setItem("token", token);
     setUser({ token });
@@ -31,7 +36,7 @@ const App = () => {
       <Router>
         <Navbar />
         <Routes>
-          <Route path="/" element={<Navigate to="/employees" />} />
+          <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/employees" element={user ? <AddEmployee /> : <Navigate to="/login" />} />

@@ -7,6 +7,9 @@ const AddEmployee = () => {
   const token = user?.token;
 
   const [employees, setEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [selectedRole, setSelectedRole] = useState("All");
+
   const [form, setForm] = useState({
     name: "",
     role: "",
@@ -21,8 +24,19 @@ const AddEmployee = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEmployees(res.data);
+      setFilteredEmployees(res.data);
     } catch (err) {
-      console.error("❌ Error fetching employees:", err);
+      console.error("Error fetching employees:", err);
+    }
+  };
+
+  const handleRoleFilter = (e) => {
+    const role = e.target.value;
+    setSelectedRole(role);
+    if (role === "All") {
+      setFilteredEmployees(employees);
+    } else {
+      setFilteredEmployees(employees.filter((emp) => emp.role === role));
     }
   };
 
@@ -46,7 +60,7 @@ const AddEmployee = () => {
       setForm({ name: "", role: "", availability: "", preferred_hours: 40 });
       fetchEmployees();
     } catch (err) {
-      console.error("❌ Error submitting employee:", err);
+      console.error("Error submitting employee:", err);
     }
   };
 
@@ -57,7 +71,7 @@ const AddEmployee = () => {
       });
       fetchEmployees();
     } catch (err) {
-      console.error("❌ Error deleting employee:", err);
+      console.error("Error deleting employee:", err);
     }
   };
 
@@ -74,6 +88,10 @@ const AddEmployee = () => {
   useEffect(() => {
     if (token) fetchEmployees();
   }, [token]);
+
+  useEffect(() => {
+    handleRoleFilter({ target: { value: selectedRole } });
+  }, [employees]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -109,9 +127,21 @@ const AddEmployee = () => {
         />
         <button type="submit">{editId ? "Update" : "Add"} Employee</button>
       </form>
-
+      
+      <br></br>
       <h3>Current Employees</h3>
-      <table border="1" cellPadding="8" style={{ width: "100%" }}>
+
+      <label>Filter by Role: </label>
+      <select value={selectedRole} onChange={handleRoleFilter}>
+        <option value="All">All</option>
+        {[...new Set(employees.map((emp) => emp.role))].map((role) => (
+          <option key={role} value={role}>
+            {role}
+          </option>
+        ))}
+      </select>
+
+      <table border="1" cellPadding="8" style={{ width: "100%", marginTop: "10px" }}>
         <thead>
           <tr>
             <th>ID</th>
@@ -123,7 +153,7 @@ const AddEmployee = () => {
           </tr>
         </thead>
         <tbody>
-          {employees.map((emp) => (
+          {filteredEmployees.map((emp) => (
             <tr key={emp.id}>
               <td>{emp.id}</td>
               <td>{emp.name}</td>

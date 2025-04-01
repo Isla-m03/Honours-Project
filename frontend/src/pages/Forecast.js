@@ -25,11 +25,9 @@ const Forecast = () => {
     e.preventDefault();
     try {
       if (editId) {
-        await axios.put(
-          `http://localhost:5000/forecast/${editId}`,
-          form,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`http://localhost:5000/forecast/${editId}`, form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setEditId(null);
       } else {
         await axios.post("http://localhost:5000/forecast", form, {
@@ -66,7 +64,7 @@ const Forecast = () => {
   return (
     <div style={{ padding: 20 }}>
       <h2>{editId ? "Edit Forecast" : "Add Forecast"}</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
         <input
           type="date"
           value={form.date}
@@ -84,18 +82,31 @@ const Forecast = () => {
       </form>
 
       <h3>Forecasts</h3>
-      <ul>
-        {forecasts.map((f) => (
-          <li key={f.id}>
-            ID: {f.id} — {f.date} — £{f.revenue}
-            <button onClick={() => handleEdit(f)} style={{ marginLeft: 10 }}>Edit</button>
-            <button onClick={() => handleDelete(f.id)} style={{ marginLeft: 10 }}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <table border="1" cellPadding="8" style={{ width: "100%", color: "white" }}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Revenue</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {forecasts.map((f) => (
+            <tr key={f.id}>
+              <td>{f.id}</td>
+              <td>{f.date}</td>
+              <td>£{f.revenue}</td>
+              <td>
+                <button onClick={() => handleEdit(f)} style={{ marginRight: "10px" }}>Edit</button>
+                <button onClick={() => handleDelete(f.id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
 export default Forecast;
-
