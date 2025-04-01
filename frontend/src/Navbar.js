@@ -13,7 +13,7 @@ const Navbar = () => {
 
   return (
     <nav style={styles.navbar}>
-      <h2 style={styles.logo}>ShiftSync</h2>
+      <h2 style={styles.logo}>ShiftSmart</h2>
       <div style={styles.links}>
         {user ? (
           <>

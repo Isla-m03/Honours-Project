@@ -266,8 +266,12 @@ def generate_schedule():
 
     current_date = start_date
     while current_date <= end_date:
+        # 🧹 Delete existing shifts for this user on the same date
+        Shift.query.filter_by(user_id=user_id, date=current_date).delete()
+
         revenue = forecasts.get(current_date, 0)
 
+        # Logic: Adjust based on revenue
         required_roles = {
             "Chef": 2 if revenue > 0 else 0,
             "Server": 2 if revenue > 0 else 0,
@@ -288,6 +292,7 @@ def generate_schedule():
                         role=role
                     )
                     db.session.add(shift)
+
         current_date += timedelta(days=1)
 
     db.session.commit()
