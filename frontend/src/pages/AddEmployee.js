@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { UserContext } from "../App";
 
@@ -7,7 +7,13 @@ const AddEmployee = () => {
   const token = user?.token;
 
   const [employees, setEmployees] = useState([]);
-  const [form, setForm] = useState({ name: "", role: "", availability: "", preferred_hours: 40 });
+  const [form, setForm] = useState({
+    name: "",
+    role: "",
+    availability: "",
+    preferred_hours: 40,
+  });
+  const [editId, setEditId] = useState(null);
 
   const fetchEmployees = async () => {
     try {
@@ -16,20 +22,31 @@ const AddEmployee = () => {
       });
       setEmployees(res.data);
     } catch (err) {
-      console.error("Fetch Employees Error:", err);
+      console.error("❌ Error fetching employees:", err);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/employees", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (editId) {
+        await axios.put(
+          `http://localhost:5000/employees/${editId}`,
+          form,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setEditId(null);
+      } else {
+        await axios.post("http://localhost:5000/employees", form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
       setForm({ name: "", role: "", availability: "", preferred_hours: 40 });
       fetchEmployees();
     } catch (err) {
-      console.error("Add Employee Error:", err);
+      console.error("❌ Error submitting employee:", err);
     }
   };
 
@@ -40,8 +57,18 @@ const AddEmployee = () => {
       });
       fetchEmployees();
     } catch (err) {
-      console.error("Delete Employee Error:", err);
+      console.error("❌ Error deleting employee:", err);
     }
+  };
+
+  const handleEdit = (emp) => {
+    setEditId(emp.id);
+    setForm({
+      name: emp.name,
+      role: emp.role,
+      availability: emp.availability,
+      preferred_hours: emp.preferred_hours,
+    });
   };
 
   useEffect(() => {
@@ -50,27 +77,69 @@ const AddEmployee = () => {
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Add Employee</h2>
+      <h2>{editId ? "Edit Employee" : "Add Employee"}</h2>
       <form onSubmit={handleSubmit}>
-        <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        <input placeholder="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} required />
-        <input placeholder="Availability" value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })} required />
-        <input type="number" placeholder="Preferred Hours" value={form.preferred_hours} onChange={(e) => setForm({ ...form, preferred_hours: e.target.value })} />
-        <button type="submit">Add</button>
+        <input
+          type="text"
+          placeholder="Name"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Role"
+          value={form.role}
+          onChange={(e) => setForm({ ...form, role: e.target.value })}
+          required
+        />
+        <input
+          type="text"
+          placeholder="Availability"
+          value={form.availability}
+          onChange={(e) => setForm({ ...form, availability: e.target.value })}
+        />
+        <input
+          type="number"
+          placeholder="Preferred Hours"
+          value={form.preferred_hours}
+          onChange={(e) =>
+            setForm({ ...form, preferred_hours: e.target.value })
+          }
+        />
+        <button type="submit">{editId ? "Update" : "Add"} Employee</button>
       </form>
 
       <h3>Current Employees</h3>
-      <ul>
-        {employees.map(emp => (
-          <li key={emp.id}>
-            ID: {emp.id} — {emp.name} ({emp.role}) — {emp.availability}
-            <button onClick={() => handleDelete(emp.id)} style={{ marginLeft: 10 }}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <table border="1" cellPadding="8" style={{ width: "100%" }}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Availability</th>
+            <th>Preferred Hours</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {employees.map((emp) => (
+            <tr key={emp.id}>
+              <td>{emp.id}</td>
+              <td>{emp.name}</td>
+              <td>{emp.role}</td>
+              <td>{emp.availability}</td>
+              <td>{emp.preferred_hours}</td>
+              <td>
+                <button onClick={() => handleEdit(emp)}>Edit</button>
+                <button onClick={() => handleDelete(emp.id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
 
 export default AddEmployee;
-

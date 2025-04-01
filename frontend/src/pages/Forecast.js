@@ -8,6 +8,7 @@ const Forecast = () => {
 
   const [forecasts, setForecasts] = useState([]);
   const [form, setForm] = useState({ date: "", revenue: "" });
+  const [editId, setEditId] = useState(null);
 
   const fetchForecasts = async () => {
     try {
@@ -23,13 +24,18 @@ const Forecast = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        date: form.date,
-        revenue: parseInt(form.revenue),
-      };
-      await axios.post("http://localhost:5000/forecast", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (editId) {
+        await axios.put(
+          `http://localhost:5000/forecast/${editId}`,
+          form,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEditId(null);
+      } else {
+        await axios.post("http://localhost:5000/forecast", form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
       setForm({ date: "", revenue: "" });
       fetchForecasts();
     } catch (err) {
@@ -48,14 +54,19 @@ const Forecast = () => {
     }
   };
 
+  const handleEdit = (forecast) => {
+    setForm({ date: forecast.date, revenue: forecast.revenue });
+    setEditId(forecast.id);
+  };
+
   useEffect(() => {
     if (token) fetchForecasts();
   }, [token]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Add Forecast</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+    <div style={{ padding: 20 }}>
+      <h2>{editId ? "Edit Forecast" : "Add Forecast"}</h2>
+      <form onSubmit={handleSubmit}>
         <input
           type="date"
           value={form.date}
@@ -64,39 +75,27 @@ const Forecast = () => {
         />
         <input
           type="number"
-          placeholder="Revenue"
           value={form.revenue}
           onChange={(e) => setForm({ ...form, revenue: e.target.value })}
+          placeholder="Revenue"
           required
         />
-        <button type="submit">Add Forecast</button>
+        <button type="submit">{editId ? "Update" : "Add"} Forecast</button>
       </form>
 
-      <h3>Existing Forecasts</h3>
-      <table border="1" cellPadding="8" style={{ width: "100%" }}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Revenue</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {forecasts.map((f) => (
-            <tr key={f.id}>
-              <td>{f.id}</td>
-              <td>{f.date}</td>
-              <td>£{f.revenue}</td>
-              <td>
-                <button onClick={() => handleDelete(f.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h3>Forecasts</h3>
+      <ul>
+        {forecasts.map((f) => (
+          <li key={f.id}>
+            ID: {f.id} — {f.date} — £{f.revenue}
+            <button onClick={() => handleEdit(f)} style={{ marginLeft: 10 }}>Edit</button>
+            <button onClick={() => handleDelete(f.id)} style={{ marginLeft: 10 }}>Delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
 
 export default Forecast;
+

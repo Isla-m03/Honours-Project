@@ -128,6 +128,23 @@ def delete_employee(id):
     db.session.commit()
     return jsonify({"message": "Deleted"}), 200
 
+@app.route("/employees/<int:employee_id>", methods=["PUT"])
+@jwt_required()
+def update_employee(employee_id):
+    user_id = get_jwt_identity()
+    employee = Employee.query.filter_by(id=employee_id, user_id=user_id).first()
+    if not employee:
+        return jsonify({"error": "Employee not found"}), 404
+
+    data = request.json
+    employee.name = data.get("name", employee.name)
+    employee.role = data.get("role", employee.role)
+    employee.availability = data.get("availability", employee.availability)
+    employee.preferred_hours = data.get("preferred_hours", employee.preferred_hours)
+    db.session.commit()
+
+    return jsonify({"message": "Employee updated"}), 200
+
 # ======================= FORECAST ==========================
 
 @app.route("/forecast", methods=["GET", "POST"])
@@ -163,6 +180,21 @@ def delete_forecast(forecast_id):
     db.session.delete(forecast)
     db.session.commit()
     return jsonify({"message": "Forecast deleted"}), 200
+
+@app.route("/forecast/<int:forecast_id>", methods=["PUT"])
+@jwt_required()
+def update_forecast(forecast_id):
+    user_id = get_jwt_identity()
+    forecast = Forecast.query.filter_by(id=forecast_id, user_id=user_id).first()
+    if not forecast:
+        return jsonify({"error": "Forecast not found"}), 404
+
+    data = request.json
+    forecast.date = datetime.strptime(data["date"], "%Y-%m-%d").date()
+    forecast.revenue = int(data["revenue"])
+    db.session.commit()
+
+    return jsonify({"message": "Forecast updated"}), 200
 
 # ======================= HOLIDAY ==========================
 
