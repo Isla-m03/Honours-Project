@@ -4,14 +4,14 @@ import requests
 import random
 
 BASE_URL = "http://127.0.0.1:5000/employees"
-JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc0MzUyNTExNSwianRpIjoiZTM0N2I5YTQtMTYxYi00NTI1LTlhOWEtNDc3MDVjNDFmZDJkIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NDM1MjUxMTUsImNzcmYiOiI1MmIxNGVlMy1kYjcxLTQ5ZDYtYjYwZC00YTY4M2E4MDNhYTkiLCJleHAiOjE3NDM1MjYwMTV9.5N6Bq4W1j7gozxtTay4aVJZnwLS2Umxh2yObFviyOgM"
+JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc0MzUyNjA5NSwianRpIjoiYzhmN2FiZWYtMmFiNy00OTAwLTliZWEtOGY3NmZkOWM1Zjc3IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NDM1MjYwOTUsImNzcmYiOiJmNzRmOWIxNy1jMWE4LTRkN2MtYWI1ZS1lZmIyMzNkMmUwMDEiLCJleHAiOjE3NDM1MjY5OTV9.Rdv4YpFf4ooucPSF9Z6ZWYpuJnpyNY8e-HH7m7PyoRM"
 
 headers = {
     "Authorization": f"Bearer {JWT_TOKEN}",
     "Content-Type": "application/json"
 }
 
-roles = ["Server", "Chef", "Bartender", "Door Host", "Server Assistant"]
+roles = ["Server", "Chef", "Bartender", "Door Host", "Server Assistant", "Manager"]
 
 availability_options = [
     "Mon-Fri 10:00-17:00",
@@ -19,7 +19,7 @@ availability_options = [
     "Wed-Sun 10:00-23:00",
     "Mon-Wed 10:00-17:00, Fri-Sun 17:00-23:00",
     "Thu-Sat 10:00-23:00",
-    "Mon-Sun 12:00-20:00"
+    "Mon-Sun 10:00-23:00"
 ]
 
 names = [
@@ -38,7 +38,7 @@ for i in range(40):
         "name": names[i],
         "role": random.choice(roles),
         "availability": random.choice(availability_options),
-        "preferred_hours": random.randint(20, 40)
+        "preferred_hours": random.randint(5, 40)
     }
 
     response = requests.post(BASE_URL, json=employee_data, headers=headers)
