@@ -215,7 +215,7 @@ def holiday_requests():
         db.session.commit()
         return jsonify({"message": "Request submitted"}), 201
 
-    requests = HolidayRequest.query.filter_by(user_id=user_id).all()
+    requests = HolidayRequest.query.filter_by(user_id=user_id).order_by(HolidayRequest.date.desc()).all()
     results = []
     for r in requests:
         employee = Employee.query.get(r.employee_id)
@@ -261,15 +261,21 @@ def generate_schedule():
     start_date = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
     end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
 
-    employees = Employee.query.filter_by(user_id=user_id).all()
+    all_employees = Employee.query.filter_by(user_id=user_id).all()
     forecasts = {f.date: f.revenue for f in Forecast.query.filter_by(user_id=user_id).all()}
+
+    # Map: date -> set of employee_ids with approved holidays
+    approved_requests = HolidayRequest.query.filter_by(user_id=user_id, status="Approved").all()
+    holidays_by_date = {}
+    for r in approved_requests:
+        holidays_by_date.setdefault(r.date, set()).add(r.employee_id)
 
     current_date = start_date
     while current_date <= end_date:
-        # Clear existing shifts for the day
         Shift.query.filter_by(user_id=user_id, date=current_date).delete()
 
         revenue = forecasts.get(current_date, 0)
+        unavailable_ids = holidays_by_date.get(current_date, set())
 
         if revenue < 1000:
             required_roles = {"Chef": 1, "Server": 1, "Manager": 1}
@@ -298,20 +304,21 @@ def generate_schedule():
                 "Bartender": 3, "Door Host": 2, "Server Assistant": 3
             }
 
-        # Enforce essential coverage
+        # Always enforce 1 AM + 1 PM for core roles
         for essential in ["Chef", "Server", "Manager"]:
             required_roles[essential] = max(required_roles.get(essential, 0), 2)
 
         for role, count in required_roles.items():
-            available = [e for e in employees if e.role == role]
+            available = [e for e in all_employees if e.role == role and e.id not in unavailable_ids]
             for i in range(count):
                 if i < len(available):
+                    is_am = (i % 2 == 0)
                     shift = Shift(
                         user_id=user_id,
                         date=current_date,
-                        shift_type="AM" if i % 2 == 0 else "PM",
-                        start_time=datetime.strptime("10:00", "%H:%M").time() if i % 2 == 0 else datetime.strptime("17:00", "%H:%M").time(),
-                        end_time=datetime.strptime("17:00", "%H:%M").time() if i % 2 == 0 else datetime.strptime("23:00", "%H:%M").time(),
+                        shift_type="AM" if is_am else "PM",
+                        start_time=datetime.strptime("10:00", "%H:%M").time() if is_am else datetime.strptime("17:00", "%H:%M").time(),
+                        end_time=datetime.strptime("17:00", "%H:%M").time() if is_am else datetime.strptime("23:00", "%H:%M").time(),
                         employee_id=available[i].id,
                         role=role
                     )

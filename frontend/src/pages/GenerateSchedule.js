@@ -1,5 +1,3 @@
-// src/pages/GenerateSchedule.js
-
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { UserContext } from "../App";
@@ -82,6 +80,15 @@ const GenerateSchedule = () => {
     return emp ? emp.name : "Unknown";
   };
 
+  // Sort schedule by role then AM before PM
+  const sortedSchedule = [...schedule].sort((a, b) => {
+    if (a.role < b.role) return -1;
+    if (a.role > b.role) return 1;
+    if (a.shift_type === "AM" && b.shift_type === "PM") return -1;
+    if (a.shift_type === "PM" && b.shift_type === "AM") return 1;
+    return 0;
+  });
+
   return (
     <div style={{ padding: "20px" }}>
       <h2>Generate Schedule</h2>
@@ -112,8 +119,7 @@ const GenerateSchedule = () => {
         <button onClick={deleteSchedule}>Delete Schedule</button>
       </div>
 
-
-      {schedule.length > 0 ? (
+      {sortedSchedule.length > 0 ? (
         <table border="1" cellPadding="6" style={{ marginTop: "20px", width: "100%" }}>
           <thead>
             <tr>
@@ -126,7 +132,7 @@ const GenerateSchedule = () => {
             </tr>
           </thead>
           <tbody>
-            {schedule.map((s) => (
+            {sortedSchedule.map((s) => (
               <tr key={s.id}>
                 <td>{s.date}</td>
                 <td>{s.shift_type}</td>
@@ -146,3 +152,4 @@ const GenerateSchedule = () => {
 };
 
 export default GenerateSchedule;
+
