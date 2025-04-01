@@ -11,7 +11,7 @@ const HolidayRequests = () => {
     try {
       const res = await axios.get("http://127.0.0.1:5000/holiday_requests", {
         headers: { Authorization: `Bearer ${user.token}` },
-        params: { user_id: user.id }
+        params: { user_id: user.id },
       });
       setRequests(res.data);
     } catch (err) {
@@ -27,7 +27,7 @@ const HolidayRequests = () => {
         {
           employee_id: form.employee_id,
           date: form.date,
-          user_id: user.id
+          user_id: user.id,
         },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
@@ -38,12 +38,14 @@ const HolidayRequests = () => {
     }
   };
 
-  const handleUpdate = async (requestId, newStatus) => {
+  const handleUpdate = async (id, status) => {
     try {
       await axios.put(
-        `http://127.0.0.1:5000/holiday_requests/${requestId}`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        `http://127.0.0.1:5000/holiday_requests/${id}`,
+        { status },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
       );
       fetchRequests();
     } catch (err) {
@@ -58,12 +60,15 @@ const HolidayRequests = () => {
   return (
     <div style={{ padding: "20px" }}>
       <h2>Holiday Request</h2>
+
       <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
         <input
           type="number"
           placeholder="Employee ID"
           value={form.employee_id}
-          onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, employee_id: e.target.value })
+          }
           required
         />
         <input
@@ -80,7 +85,7 @@ const HolidayRequests = () => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Employee ID</th>
+            <th>Employee Name</th>
             <th>Date</th>
             <th>Status</th>
             <th>Actions</th>
@@ -90,12 +95,16 @@ const HolidayRequests = () => {
           {requests.map((req) => (
             <tr key={req.id}>
               <td>{req.id}</td>
-              <td>{req.employee_id}</td>
+              <td>{req.employee_name}</td>
               <td>{req.date}</td>
               <td>{req.status}</td>
               <td>
-                <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>{" "}
-                <button onClick={() => handleUpdate(req.id, "Rejected")}>Reject</button>
+                <button onClick={() => handleUpdate(req.id, "Approved")}>
+                  Approve
+                </button>{" "}
+                <button onClick={() => handleUpdate(req.id, "Rejected")}>
+                  Reject
+                </button>
               </td>
             </tr>
           ))}

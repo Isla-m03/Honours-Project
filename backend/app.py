@@ -151,6 +151,19 @@ def forecast():
         "id": f.id, "date": f.date.strftime("%Y-%m-%d"), "revenue": f.revenue
     } for f in forecasts]), 200
 
+@app.route("/forecast/<int:forecast_id>", methods=["DELETE"])
+@jwt_required()
+def delete_forecast(forecast_id):
+    user_id = get_jwt_identity()
+    forecast = Forecast.query.filter_by(id=forecast_id, user_id=user_id).first()
+    
+    if not forecast:
+        return jsonify({"error": "Forecast not found"}), 404
+
+    db.session.delete(forecast)
+    db.session.commit()
+    return jsonify({"message": "Forecast deleted"}), 200
+
 # ======================= HOLIDAY ==========================
 
 @app.route("/holiday_requests", methods=["GET", "POST"])
@@ -171,10 +184,19 @@ def holiday_requests():
         return jsonify({"message": "Request submitted"}), 201
 
     requests = HolidayRequest.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": r.id, "employee_id": r.employee_id,
-        "date": r.date.strftime("%Y-%m-%d"), "status": r.status
-    } for r in requests]), 200
+    results = []
+    for r in requests:
+        employee = Employee.query.get(r.employee_id)
+        results.append({
+            "id": r.id,
+            "employee_id": r.employee_id,
+            "employee_name": employee.name if employee else "Unknown",
+            "date": r.date.strftime("%Y-%m-%d"),
+            "status": r.status
+        })
+
+    return jsonify(results), 200
+
 
 @app.route('/holiday_requests/<int:request_id>', methods=['PUT'])
 @jwt_required()
@@ -195,7 +217,6 @@ def update_holiday_request(request_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # ======================= SCHEDULE ==========================
 
@@ -268,14 +289,14 @@ def get_schedule():
 @app.route('/schedule/<date>', methods=['GET'])
 @jwt_required()
 def get_schedule_by_date(date):
+    user_id = get_jwt_identity()
     try:
-        user_id = get_jwt_identity()
         selected_date = datetime.strptime(date, "%Y-%m-%d").date()
-        shifts = Shift.query.filter_by(date=selected_date, user_id=user_id).all()
+        shifts = Shift.query.filter_by(user_id=user_id, date=selected_date).all()
 
         result = []
         for s in shifts:
-            emp = Employee.query.get(s.employee_id)
+            employee = Employee.query.get(s.employee_id)
             result.append({
                 "id": s.id,
                 "date": s.date.strftime("%Y-%m-%d"),
@@ -283,7 +304,7 @@ def get_schedule_by_date(date):
                 "start_time": s.start_time.strftime("%H:%M"),
                 "end_time": s.end_time.strftime("%H:%M"),
                 "employee_id": s.employee_id,
-                "employee_name": emp.name if emp else "Unknown",
+                "employee_name": employee.name if employee else "Unknown",
                 "role": s.role
             })
         return jsonify(result), 200

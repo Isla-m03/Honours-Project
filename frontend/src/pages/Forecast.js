@@ -23,7 +23,11 @@ const Forecast = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/forecast", form, {
+      const payload = {
+        date: form.date,
+        revenue: parseInt(form.revenue),
+      };
+      await axios.post("http://localhost:5000/forecast", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setForm({ date: "", revenue: "" });
@@ -49,23 +53,48 @@ const Forecast = () => {
   }, [token]);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: "20px" }}>
       <h2>Add Forecast</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
-        <input type="number" value={form.revenue} onChange={(e) => setForm({ ...form, revenue: e.target.value })} placeholder="Revenue" required />
+      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+        <input
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+          required
+        />
+        <input
+          type="number"
+          placeholder="Revenue"
+          value={form.revenue}
+          onChange={(e) => setForm({ ...form, revenue: e.target.value })}
+          required
+        />
         <button type="submit">Add Forecast</button>
       </form>
 
-      <h3>Forecasts</h3>
-      <ul>
-        {forecasts.map(f => (
-          <li key={f.id}>
-            ID: {f.id} — {f.date} — £{f.revenue}
-            <button onClick={() => handleDelete(f.id)} style={{ marginLeft: 10 }}>Delete</button>
-          </li>
-        ))}
-      </ul>
+      <h3>Existing Forecasts</h3>
+      <table border="1" cellPadding="8" style={{ width: "100%" }}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Revenue</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {forecasts.map((f) => (
+            <tr key={f.id}>
+              <td>{f.id}</td>
+              <td>{f.date}</td>
+              <td>£{f.revenue}</td>
+              <td>
+                <button onClick={() => handleDelete(f.id)}>Delete</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
