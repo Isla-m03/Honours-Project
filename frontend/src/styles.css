@@ -1,7 +1,7 @@
 /* Global Theme - Purple, Black & White */
 body {
-    background-color: #121212; /* Black background */
-    color: #ffffff; /* White text */
+    background-color: #121212;
+    color: #ffffff;
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
@@ -13,25 +13,30 @@ body {
     max-width: 800px;
     margin: 20px auto;
     padding: 20px;
-    background-color: #1e1e2f; /* Dark Purple */
+    background-color: #1e1e2f;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* 🏷 Titles & Headings */
-h1, h2, h3 {
-    color: #a29bfe; /* Light Purple */
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Arial', sans-serif;
+    color: #ffffff !important;
     text-align: center;
 }
 
-/* Forms & Input Fields */
+p {
+    color: #ffffff;
+}
+
+/* Input and Select */
 input, select {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
-    border: 2px solid #a29bfe; /* Light Purple Border */
+    border: 2px solid #a29bfe;
     border-radius: 5px;
-    background-color: #2b2b3b; /* Dark Grey */
+    background-color: #2b2b3b;
     color: #ffffff;
     font-size: 16px;
 }
@@ -41,7 +46,7 @@ button {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
-    background-color: #6c5ce7; /* Purple */
+    background-color: #6c5ce7;
     color: #ffffff;
     font-size: 16px;
     border: none;
@@ -51,18 +56,13 @@ button {
 }
 
 button:hover {
-    background-color: #a29bfe; /* Light Purple */
+    background-color: #a29bfe;
 }
 
+/* Specific Button Classes */
 .delete-btn {
     background-color: #ff4d4d;
     color: white;
-    border: none;
-    padding: 10px 15px;
-    margin: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 16px;
 }
 
 .delete-btn:hover {
@@ -72,25 +72,32 @@ button:hover {
 .generate-btn {
     background-color: #6c5ce7;
     color: white;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 16px;
 }
 
 .generate-btn:hover {
     background-color: #4834d4;
 }
 
-/* Lists */
+.schedule-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.schedule-controls button {
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+/* List Styles */
 ul {
     list-style: none;
     padding: 0;
 }
 
 li {
-    background-color: #2b2b3b; /* Dark Grey */
+    background-color: #2b2b3b;
     margin: 10px 0;
     padding: 10px;
     border-radius: 5px;
@@ -106,9 +113,9 @@ li button {
     margin-left: 5px;
 }
 
-/* Navigation Menu */
+/* Navbar */
 nav {
-    background-color: #6c5ce7; /* Purple */
+    background-color: #6c5ce7;
     padding: 15px;
     text-align: center;
 }
@@ -122,11 +129,10 @@ nav a {
 }
 
 nav a:hover {
-    color: #dfe6e9; /* Soft White */
+    color: #dfe6e9;
 }
 
-/* Tables (For Schedule Display) */
-/* Schedule Page Styles */
+/* Schedule Section */
 .schedule-section {
     margin-top: 20px;
     padding: 15px;
@@ -136,6 +142,39 @@ nav a:hover {
     color: white;
 }
 
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #1e1e2f;
+    color: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #6c5ce7;
+}
+
+th {
+    background-color: #6c5ce7;
+    color: white;
+    font-weight: bold;
+}
+
+td {
+    background-color: #2b2b3b;
+}
+
+/* Row Hover */
+tr:hover {
+    background-color: #3a3a4e;
+}
+
+/* Schedule Table */
 .schedule-table {
     width: 100%;
     border-collapse: collapse;
@@ -157,62 +196,29 @@ nav a:hover {
     background-color: #3a3a4e;
 }
 
-
-/* 📋 Employee Table Styles */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #1e1e2f; /* Dark Purple */
-    color: white;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-th, td {
-    padding: 10px;
-    text-align: center;
-    border-bottom: 1px solid #6c5ce7; /* Purple Borders */
-}
-
-th {
-    background-color: #6c5ce7; /* Purple */
-    color: white;
-    font-weight: bold;
-}
-
-td {
-    background-color: #2b2b3b; /* Dark Grey */
-}
-
-/* Add Space Between Rows */
-tr:hover {
-    background-color: #3a3a4e; /* Slight Highlight on Hover */
-}
-
-/* 📱 Responsive Table */
+/* Responsive Tables */
 @media (max-width: 600px) {
     table {
         font-size: 14px;
     }
+
     th, td {
         padding: 8px;
     }
-}
 
-/* 📱 Mobile Responsiveness */
-@media (max-width: 600px) {
     .container {
         width: 95%;
     }
 
-    button {
-        font-size: 14px;
-    }
-
-    input {
+    button, input {
         font-size: 14px;
     }
 }
 
-
+/* App Full Height + Theme Background */
+html, body, #root {
+    height: 100%;
+    background-color: #121212 !important;
+    margin: 0;
+    padding: 0;
+}

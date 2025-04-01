@@ -20,7 +20,7 @@ const GenerateSchedule = () => {
       });
       setEmployees(res.data);
     } catch (err) {
-      console.error("❌ Error fetching employees:", err);
+      console.error("Error fetching employees:", err);
     }
   };
 
@@ -33,7 +33,7 @@ const GenerateSchedule = () => {
       });
       setSchedule(res.data);
     } catch (err) {
-      console.error("❌ Error fetching schedule:", err);
+      console.error("Error fetching schedule:", err);
     }
   };
 
@@ -52,7 +52,7 @@ const GenerateSchedule = () => {
       );
       fetchSchedule();
     } catch (err) {
-      console.error("❌ Error generating schedule:", err);
+      console.error("Error generating schedule:", err);
     }
   };
 
@@ -65,7 +65,7 @@ const GenerateSchedule = () => {
       });
       setSchedule([]);
     } catch (err) {
-      console.error("❌ Error deleting schedule:", err);
+      console.error("Error deleting schedule:", err);
     }
   };
 
@@ -107,10 +107,11 @@ const GenerateSchedule = () => {
         value={selectedDate}
         onChange={(e) => setSelectedDate(e.target.value)}
       />
-      <button onClick={fetchSchedule}>View</button>
-      <button onClick={deleteSchedule} style={{ marginLeft: "10px" }}>
-        Delete Schedule
-      </button>
+      <div className="schedule-controls">
+        <button onClick={fetchSchedule}>View Schedule</button>
+        <button onClick={deleteSchedule}>Delete Schedule</button>
+      </div>
+
 
       {schedule.length > 0 ? (
         <table border="1" cellPadding="6" style={{ marginTop: "20px", width: "100%" }}>
