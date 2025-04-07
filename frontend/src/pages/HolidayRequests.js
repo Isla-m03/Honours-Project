@@ -55,54 +55,56 @@ const HolidayRequests = () => {
     if (user) fetchRequests();
   }, [user]);
 
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2>Holiday Request</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
-        <input
-          type="number"
-          placeholder="Employee ID"
-          value={form.employee_id}
-          onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
-          required
-        />
-        <input
-          type="date"
-          value={form.date}
-          onChange={(e) => setForm({ ...form, date: e.target.value })}
-          required
-        />
-        <button type="submit">Submit Request</button>
-      </form>
+  // same import & setup as before
 
-      <h3>Current Requests</h3>
-      <table border="1" cellPadding="8" style={{ width: "100%" }}>
-        <thead>
-          <tr>
-            <th>Employee ID</th>
-            <th>Employee Name</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
+return (
+  <div style={{ padding: "20px" }}>
+    <h2>Holiday Request</h2>
+    <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+      <input
+        type="number"
+        placeholder="Employee ID"
+        value={form.employee_id}
+        onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+        required
+      />
+      <input
+        type="date"
+        value={form.date}
+        onChange={(e) => setForm({ ...form, date: e.target.value })}
+        required
+      />
+      <button type="submit">Submit Request</button>
+    </form>
+
+    <h3>Current Requests</h3>
+    <table className="simple-table">
+      <thead>
+        <tr>
+          <th>Employee ID</th>
+          <th>Employee Name</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {requests.map((req) => (
+          <tr key={req.id}>
+            <td>{req.employee_id}</td>
+            <td>{req.employee_name || "Unknown"}</td>
+            <td>{req.date}</td>
+            <td>{req.status}</td>
+            <td>
+              <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>{" "}
+              <button onClick={() => handleUpdate(req.id, "Rejected")}>Reject</button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {requests.map((req) => (
-            <tr key={req.id}>
-              <td>{req.employee_id}</td>
-              <td>{req.employee_name || "Unknown"}</td>
-              <td>{req.date}</td>
-              <td>{req.status}</td>
-              <td>
-                <button onClick={() => handleUpdate(req.id, "Approved")}>Approve</button>{" "}
-                <button onClick={() => handleUpdate(req.id, "Rejected")}>Reject</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 };
 
 export default HolidayRequests;

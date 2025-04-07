@@ -23,6 +23,7 @@ const Navbar = () => {
             <Link to="/forecast" style={styles.link}>Forecast</Link>
             <Link to="/schedule" style={styles.link}>Schedule</Link>
             <Link to="/holiday" style={styles.link}>Holiday</Link>
+            <Link to="/account" style={styles.link}>Account</Link>
             <button className="logout-btn" onClick={handleLogout}>Logout</button>
           </>
         ) : (

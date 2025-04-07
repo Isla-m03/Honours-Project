@@ -7,6 +7,7 @@ import GenerateSchedule from "./pages/GenerateSchedule";
 import HolidayRequests from "./pages/HolidayRequests";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Account from "./pages/Account";
 
 export const UserContext = createContext();
 
@@ -43,6 +44,7 @@ const App = () => {
           <Route path="/forecast" element={user ? <Forecast /> : <Navigate to="/login" />} />
           <Route path="/schedule" element={user ? <GenerateSchedule /> : <Navigate to="/login" />} />
           <Route path="/holiday" element={user ? <HolidayRequests /> : <Navigate to="/login" />} />
+          <Route path="/account" element={user ? <Account /> : <Navigate to="/login" />} />
         </Routes>
       </Router>
     </UserContext.Provider>

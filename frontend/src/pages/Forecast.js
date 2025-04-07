@@ -64,7 +64,7 @@ const Forecast = () => {
   return (
     <div style={{ padding: 20 }}>
       <h2>{editId ? "Edit Forecast" : "Add Forecast"}</h2>
-      <form onSubmit={handleSubmit} style={{ marginBottom: "20px" }}>
+      <form onSubmit={handleSubmit} style={{ marginBottom: 20 }}>
         <input
           type="date"
           value={form.date}
@@ -82,7 +82,7 @@ const Forecast = () => {
       </form>
 
       <h3>Forecasts</h3>
-      <table border="1" cellPadding="8" style={{ width: "100%", color: "white" }}>
+      <table className="simple-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -98,7 +98,7 @@ const Forecast = () => {
               <td>{f.date}</td>
               <td>£{f.revenue}</td>
               <td>
-                <button onClick={() => handleEdit(f)} style={{ marginRight: "10px" }}>Edit</button>
+                <button onClick={() => handleEdit(f)}>Edit</button>{" "}
                 <button onClick={() => handleDelete(f.id)}>Delete</button>
               </td>
             </tr>

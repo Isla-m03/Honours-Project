@@ -1,11 +1,15 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token, get_jwt_identity
-)
+from flask_jwt_extended import (JWTManager, jwt_required, create_access_token, get_jwt_identity)
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from reportlab.lib.pagesizes import A4, letter
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Image
+from io import BytesIO
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -396,6 +400,88 @@ def delete_schedule_by_date(date):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ======================= ACCOUNT ==========================
+
+@app.route("/account", methods=["GET", "PUT"])
+@jwt_required()
+def manage_account():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if request.method == "GET":
+        return jsonify({
+            "username": user.username,
+            "email": user.email
+        })
+
+    data = request.json
+
+    # Check for username conflict
+    if "username" in data and data["username"] != user.username:
+        existing = User.query.filter_by(username=data["username"]).first()
+        if existing:
+            return jsonify({"error": "Username already taken"}), 409
+        user.username = data["username"]
+
+    if "email" in data:
+        user.email = data["email"]
+
+    if "password" in data and data["password"]:
+        user.set_password(data["password"])
+
+    db.session.commit()
+    return jsonify({"message": "Account updated successfully"}), 200
+
+# ===================EXPORT SCHEDULE =====================
+
+@app.route("/export_schedule_pdf/<date>", methods=["GET"])
+@jwt_required()
+def export_schedule_pdf(date):
+    user_id = get_jwt_identity()
+    shifts = Shift.query.filter_by(user_id=user_id, date=date).all()
+
+    if not shifts:
+        return jsonify({"error": "No schedule for that date"}), 404
+
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+
+    # ✅ Add logo
+    logo_path = os.path.join("static", "logo.png")
+    if os.path.exists(logo_path):
+        pdf.drawImage(logo_path, x=40, y=770, width=100, height=100)
+
+    # ✅ Add title/date
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawString(160, 790, f"Shift Schedule - {date}")
+
+    # Table headers
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(40, 740, "Shift")
+    pdf.drawString(120, 740, "Start")
+    pdf.drawString(180, 740, "End")
+    pdf.drawString(240, 740, "Employee")
+    pdf.drawString(400, 740, "Role")
+
+    # Table content
+    y = 720
+    pdf.setFont("Helvetica", 11)
+    for s in shifts:
+        emp = Employee.query.get(s.employee_id)
+        name = emp.name if emp else "Unknown"
+
+        pdf.drawString(40, y, s.shift_type)
+        pdf.drawString(120, y, s.start_time.strftime("%H:%M"))
+        pdf.drawString(180, y, s.end_time.strftime("%H:%M"))
+        pdf.drawString(240, y, name)
+        pdf.drawString(400, y, s.role)
+        y -= 20
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name=f"schedule_{date}.pdf", mimetype="application/pdf")
 
 # ======================= START ==========================
 

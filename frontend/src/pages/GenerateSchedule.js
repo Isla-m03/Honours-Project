@@ -3,10 +3,10 @@ import axios from "axios";
 import { UserContext } from "../App";
 
 const GenerateSchedule = () => {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [schedule, setSchedule] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
   const [employees, setEmployees] = useState([]);
   const { user } = useContext(UserContext);
 
@@ -67,6 +67,33 @@ const GenerateSchedule = () => {
     }
   };
 
+  const exportSchedule = async () => {
+    if (!selectedDate || !user?.token) {
+      alert("Please select a date and make sure you're logged in.");
+      return;
+    }
+  
+    try {
+      const response = await axios.get(`http://localhost:5000/export_schedule_pdf/${selectedDate}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+        responseType: 'blob',
+      });
+  
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Schedule_${selectedDate}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("❌ Export PDF Error:", err);
+      alert("Failed to export schedule.");
+    }
+  };  
+  
   useEffect(() => {
     if (user) fetchEmployees();
   }, [user]);
@@ -114,10 +141,13 @@ const GenerateSchedule = () => {
         value={selectedDate}
         onChange={(e) => setSelectedDate(e.target.value)}
       />
-      <div className="schedule-controls">
+      <div className="schedule-controls" style={{ marginTop: "10px" }}>
         <button onClick={fetchSchedule}>View Schedule</button>
+        <button onClick={exportSchedule}>Export PDF</button>
         <button onClick={deleteSchedule}>Delete Schedule</button>
       </div>
+
+
 
       {sortedSchedule.length > 0 ? (
         <table border="1" cellPadding="6" style={{ marginTop: "20px", width: "100%" }}>

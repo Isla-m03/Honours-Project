@@ -229,6 +229,28 @@ tr:hover {
     background-color: #3a3a4e;
 }
 
+/* Forecast & HolidayRequests basic tables */
+.simple-table {
+    width: 100%;
+    border: 1px solid #555;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: white;
+  }
+  
+  .simple-table th,
+  .simple-table td {
+    border: 1px solid #444;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  /* Restore calendar icon color */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(48%) sepia(40%) saturate(3364%) hue-rotate(223deg) brightness(96%) contrast(96%);
+  }
+  
+  
 /* Responsive Tables */
 @media (max-width: 600px) {
     table {
