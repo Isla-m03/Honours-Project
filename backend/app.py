@@ -434,55 +434,61 @@ def manage_account():
 
 # ===================EXPORT SCHEDULE =====================
 
+
 @app.route("/export_schedule_pdf/<date>", methods=["GET"])
 @jwt_required()
 def export_schedule_pdf(date):
     user_id = get_jwt_identity()
-    shifts = Shift.query.filter_by(user_id=user_id, date=date).all()
 
+    shifts = Shift.query.filter_by(user_id=user_id, date=date).all()
     if not shifts:
-        return jsonify({"error": "No schedule for that date"}), 404
+        return jsonify({"error": "No schedule found for this date"}), 404
+
+    employees = {e.id: e.name for e in Employee.query.filter_by(user_id=user_id).all()}
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
+    PAGE_WIDTH, PAGE_HEIGHT = A4
 
-    # ✅ Add logo
+    # Draw logo centered
     logo_path = os.path.join("static", "logo.png")
     if os.path.exists(logo_path):
-        pdf.drawImage(logo_path, x=40, y=770, width=100, height=100)
+        logo_width = 85
+        x_center = (PAGE_WIDTH - logo_width) / 2
+        pdf.drawImage(logo_path, x=x_center, y=750, width=logo_width, height=85)
 
-    # ✅ Add title/date
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(160, 790, f"Shift Schedule - {date}")
+    # Draw centered title
+    def center_text(text, y, font="Helvetica-Bold", size=14):
+        pdf.setFont(font, size)
+        text_width = pdf.stringWidth(text, font, size)
+        x = (PAGE_WIDTH - text_width) / 2
+        pdf.drawString(x, y, text)
 
-    # Table headers
+    center_text(f"Shift Schedule - {date}", 730)
+
+    # Draw table headers
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(40, 740, "Shift")
-    pdf.drawString(120, 740, "Start")
-    pdf.drawString(180, 740, "End")
-    pdf.drawString(240, 740, "Employee")
-    pdf.drawString(400, 740, "Role")
+    headers = ["Shift", "Start", "End", "Employee", "Role"]
+    col_x = [60, 140, 220, 320, 440]
+    for i, h in enumerate(headers):
+        pdf.drawString(col_x[i], 700, h)
 
-    # Table content
-    y = 720
+    # Draw shift rows
     pdf.setFont("Helvetica", 11)
+    y = 680
     for s in shifts:
-        emp = Employee.query.get(s.employee_id)
-        name = emp.name if emp else "Unknown"
-
-        pdf.drawString(40, y, s.shift_type)
-        pdf.drawString(120, y, s.start_time.strftime("%H:%M"))
-        pdf.drawString(180, y, s.end_time.strftime("%H:%M"))
-        pdf.drawString(240, y, name)
-        pdf.drawString(400, y, s.role)
+        name = employees.get(s.employee_id, "Unknown")
+        values = [s.shift_type, s.start_time.strftime("%H:%M"), s.end_time.strftime("%H:%M"), name, s.role]
+        for i, val in enumerate(values):
+            pdf.drawString(col_x[i], y, str(val))
         y -= 20
+        if y < 100:
+            pdf.showPage()
+            y = 780
 
-    pdf.showPage()
     pdf.save()
     buffer.seek(0)
-
-    return send_file(buffer, as_attachment=True, download_name=f"schedule_{date}.pdf", mimetype="application/pdf")
-
+    return send_file(buffer, as_attachment=True, download_name=f"Schedule_{date}.pdf", mimetype='application/pdf')
 # ======================= START ==========================
 
 @app.route("/")
