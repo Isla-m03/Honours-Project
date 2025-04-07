@@ -89,7 +89,7 @@ const GenerateSchedule = () => {
       link.click();
       link.remove();
     } catch (err) {
-      console.error("❌ Export PDF Error:", err);
+      console.error("Export PDF Error:", err);
       alert("Failed to export schedule.");
     }
   };  
