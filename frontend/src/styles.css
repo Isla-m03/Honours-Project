@@ -30,6 +30,11 @@ p {
     color: #ffffff;
 }
 
+
+label {
+    color: white;
+}
+
 /* Input and Select */
 input, select {
     width: 100%;
