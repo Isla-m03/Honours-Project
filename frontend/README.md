@@ -13,3 +13,15 @@ Starting the app:
 -	In the other:
 -	cd frontend
 -	npm start
+
+
+
+Log In Details:
+
+User 1 - 
+username: user1
+password: user1
+
+User 2 -
+username: user2
+password: user2
